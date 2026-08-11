@@ -8,47 +8,70 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* ---- Logo matrix decode on hover ----
-   Hovering the logo churns the nickname at a steady pace, then locks it
-   left→right and settles on "s14ke". Once started the decode always runs to
-   completion — leaving mid-cycle does NOT snap back; the matrix keeps churning
-   until the decode finishes. Re-hovering restarts it from scramble. The charset
-   is letters+digits only, all resting on the baseline with no descenders, so
-   glyphs never jump vertically; the logo is monospaced (see CSS) so the grid
-   never shifts horizontally either — the blinking cursor stays put. */
+   requestAnimationFrame keeps the effect aligned with browser painting instead
+   of competing with the page through a fixed interval. Characters progress
+   through a deterministic ASCII stream, then settle from left to right. */
 function initLogoScramble() {
   var logo = document.querySelector('.logo');
   var el = logo && logo.querySelector('.logo-name');
   if (!el) return;
 
-  // Respect users who prefer reduced motion.
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  var CHARS = 'abcdefhiklmnorstuvwxz0123456789'.split('');  // baseline-safe: no descenders, no symbols
+  var CHARS = '0123456789abcdefABCDEF<>[]{}()/\\|+-=~*#'.split('');
   var finalText = el.textContent;
-  var timer = null;
+  var animationId = 0;
+  var previousFrame = -1;
 
-  function rand() { return CHARS[Math.floor(Math.random() * CHARS.length)]; }
-  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  function stop() {
+    if (animationId) cancelAnimationFrame(animationId);
+    animationId = 0;
+    previousFrame = -1;
+  }
 
   logo.addEventListener('mouseenter', function () {
     if (!finalText) return;
     stop();
 
     var n = finalText.length;
-    // Each slot locks at a staggered frame -> left-to-right decode.
-    var lockAt = [];
-    for (var i = 0; i < n; i++) lockAt.push(10 + i * 6);
-    var lastFrame = lockAt[n - 1] + 1;
-    var frame = 0;
+    var startedAt = performance.now();
+    var lockStart = 180;
+    var lockStep = 82;
+    var duration = lockStart + lockStep * n + 70;
+    logo.classList.add('is-scrambling');
 
-    timer = setInterval(function () {
-      var out = '';
-      for (var i = 0; i < n; i++) out += frame >= lockAt[i] ? finalText[i] : rand();
-      el.textContent = out;
-      if (++frame > lastFrame) { stop(); el.textContent = finalText; }
-    }, 45);
+    function render(now) {
+      var elapsed = now - startedAt;
+      // The visible glyphs change at 24fps; animation scheduling remains synced
+      // to paint, avoiding the uneven cadence caused by setInterval.
+      var frame = Math.floor(elapsed / 42);
+      if (frame !== previousFrame && elapsed < duration) {
+        previousFrame = frame;
+        var out = '';
+        for (var i = 0; i < n; i++) {
+          var locked = elapsed >= lockStart + i * lockStep;
+          out += locked ? finalText[i] : CHARS[(frame + i * 9) % CHARS.length];
+        }
+        el.textContent = out;
+      }
+      if (elapsed < duration) {
+        animationId = requestAnimationFrame(render);
+      } else {
+        animationId = 0;
+        el.textContent = finalText;
+        logo.classList.remove('is-scrambling');
+      }
+    }
+
+    animationId = requestAnimationFrame(render);
   });
-  // No mouseleave reset: a decode in progress runs to completion on its own.
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) return;
+    stop();
+    el.textContent = finalText;
+    logo.classList.remove('is-scrambling');
+  });
 }
 
 /* ---- Active nav link ---- */
