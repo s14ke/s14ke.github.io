@@ -1,0 +1,619 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tearing Down eCos RTOS Embedded System | s14ke</title>
+  <meta name="description" content="플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Tearing Down eCos RTOS Embedded System | s14ke">
+  <meta property="og:description" content="플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.">
+  <meta property="og:url" content="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
+  <meta property="og:site_name" content="s14ke">
+  <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Noto+Serif+KR:wght@400;500;600&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap">
+  <link rel="stylesheet" href="/css/main.css">
+  <script>(function(d){d.classList.add('js');if(!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('anim');setTimeout(function(){d.classList.remove('anim');},6000);}})(document.documentElement);</script>
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body data-page="post">
+  <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
+  <header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo" aria-label="s14ke home">s14ke</a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/archives/" class="nav-link">Archives</a>
+      <a href="/tags/" class="nav-link">Tags</a>
+      <a href="/about/" class="nav-link">About</a>
+      <a href="/CV.pdf" class="nav-link nav-cv" target="_blank" rel="noopener">CV</a>
+    </nav>
+  </div>
+</header>
+
+  
+<main class="main-container">
+  <div class="post-layout">
+
+    <aside class="toc-sidebar" id="toc-sidebar">
+      <div class="toc-label">Contents</div>
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#TL-DR"><span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Flash-Dump"><span class="toc-text">Flash Dump</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#SPI"><span class="toc-text">SPI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Clock-Signal"><span class="toc-text">Clock Signal</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SPI-Communication-Diagram"><span class="toc-text">SPI Communication Diagram</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Sequence-Overview"><span class="toc-text">Boot Sequence Overview</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Stage-1"><span class="toc-text">Boot Stage 1</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Stage-1-5"><span class="toc-text">Boot Stage 1.5</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Stage-2"><span class="toc-text">Boot Stage 2</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Stage-2-Bootloader-Firmware-Integrity-Verification"><span class="toc-text">Stage 2 Bootloader: Firmware Integrity Verification</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kernel-Decompressor"><span class="toc-text">Kernel Decompressor</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Why-KSEG1-for-Kernel-Decompression-Output"><span class="toc-text">Why KSEG1 for Kernel Decompression Output?</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#eCos-Firmware"><span class="toc-text">eCos Firmware</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#C-Static-Constructors-Thread-Registration"><span class="toc-text">C++ Static Constructors: Thread Registration</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><span class="toc-text">Scheduler Dispatch: Indirect Call to Application Thread</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Conclusion"><span class="toc-text">Conclusion</span></a></li></ol>
+    </aside>
+
+    <article class="post-article">
+      <a href="/" class="back-link" data-reveal="back"><span class="back-arrow">&larr;</span> Index</a>
+
+      <h1 class="post-heading" data-split="title">Tearing Down eCos RTOS Embedded System</h1>
+
+      <div class="post-meta" data-reveal="meta">
+        <time class="meta-item" datetime="2026-04-07">2026-04-07</time>
+        
+          <span class="meta-item meta-tags"><a href="/tags/IoT/" class="meta-tag">IoT</a><a href="/tags/RTOS/" class="meta-tag">RTOS</a></span>
+        
+        <span class="meta-item">13 min read</span>
+        <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="meta-item meta-alt">Read in English</a>
+      </div>
+
+      <div class="post-content" id="post-content">
+        <h1 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h1><p>eCos 기반 임베디드 시스템을 플래시 덤프부터 부팅 시퀀스까지의 분석 과정을 설명합니다.</p>
+<h1 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h1><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="PCB"><br>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="FlashROM"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="FlashROM-off"></p>
+<p>NOR 플래시는 <a target="_blank" rel="noopener" href="https://www.e-interlink.com.tw/userUpload/files/BH25D16A_v1_0.pdf">BoHong BH25D16A</a> 칩이었으며 핀 구성도는 아래와 같습니다:</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="FlashROM-pinmap"></p>
+<ul>
+<li>1: &#x2F;CS (칩 선택)</li>
+<li>2: DO (직렬 데이터 출력)</li>
+<li>3: &#x2F;WP (LOW로 설정 시 쓰기 방지)</li>
+<li>4: VSS (접지)</li>
+<li>5: DI (직렬 데이터 입력)</li>
+<li>6: SCK (직렬 클록)</li>
+<li>7: NC (연결 안 됨)</li>
+<li>8: VCC (공급 전압)</li>
+</ul>
+<p>BH25D16A는 SPI 버스의 전용 (공유되지 않는) 접근이 필요한 환경을 위해 설계되었으므로 다른 장치와 버스를 공유하기 위한 &#x2F;HOLD 핀이 없습니다. 또한 플래시 메모리 읽기만 수행하기 때문에 &#x2F;WP 핀은 연결하지 않았습니다 (읽기 전용 작업에는 필요하지 않음).</p>
+<h2 id="SPI"><a href="#SPI" class="headerlink" title="SPI"></a>SPI</h2><pre><code class="hljs plaintext">┌──────────┐                     ┌──────────┐
+│          │──── MOSI (SDI) ────&gt;│          │
+│          │&lt;─── MISO (SDO) ─────│          │
+│  Master  │──── SCLK (CLK) ────&gt;│  Slave   │
+│          │──── CS/SS (LOW) ───&gt;│          │
+└──────────┘                     └──────────┘</code></pre>
+<p>SPI (Serial Peripheral Interface)는 하나의 마스터가 하나 이상의 슬레이브 장치와 전이중 방식으로 통신할 시 사용하는 동기식 직렬 통신 프로토콜입니다. 메모리 덤프의 경우, 마스터는 SPI 프로그래머이고 슬레이브는 메모리 칩이 됩니다.</p>
+<table>
+<thead>
+<tr>
+<th align="center">Pin</th>
+<th align="center">Direction</th>
+<th align="center">Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">MOSI(Master Out Slave In)</td>
+<td align="center">마스터 → 슬레이브</td>
+<td align="center">마스터의 데이터 송신 선</td>
+</tr>
+<tr>
+<td align="center">MISO(Master In Slave Out)</td>
+<td align="center">슬레이브 → 마스터</td>
+<td align="center">슬레이브의 데이터 송신 선</td>
+</tr>
+<tr>
+<td align="center">SCLK(Serial Clock)</td>
+<td align="center">마스터 → 슬레이브</td>
+<td align="center">마스터의 클럭 신호 선</td>
+</tr>
+<tr>
+<td align="center">CS&#x2F;SS(Chip Select &#x2F; Slave Select)</td>
+<td align="center">마스터 → 슬레이브</td>
+<td align="center">LOW로 설정 시 슬레이브 선택</td>
+</tr>
+</tbody></table>
+<h2 id="Clock-Signal"><a href="#Clock-Signal" class="headerlink" title="Clock Signal"></a>Clock Signal</h2><pre><code class="hljs plaintext">SCLK  __/‾\_/‾\_/‾\_/‾\__
+MOSI  -[1]-[0]-[1]-[1]---
+        ↑   ↑   ↑   ↑
+      클럭 엣지마다 1비트씩 전송함</code></pre>
+<p>클록 신호는 장치들에게 언제 데이터를 읽거나 써야 하는지를 알려주는 타이밍 신호 역할을 수행하여 여러 장치가 통신하는 동안 동기화 상태를 유지하도록 합니다. 마스터는 클럭을 정의하고, 슬레이브는 클럭 엣지 (SPI 모드 0&#x2F;3의 상승 엣지) 에서 데이터를 샘플링합니다.</p>
+<h2 id="SPI-Communication-Diagram"><a href="#SPI-Communication-Diagram" class="headerlink" title="SPI Communication Diagram"></a>SPI Communication Diagram</h2><pre><code class="hljs plaintext">CS   ‾‾‾‾\___________________________________/‾‾‾‾
+        ↑ CS LOW (통신 시작)                   ↑ CS HIGH (통신 종료)
+
+SCLK _______/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_______
+            1   2   3   4   5   6   7   8
+            ↑ 클럭 엣지마다 1비트씩 전송함
+
+MOSI ────[MSB]──────────────────────────[LSB]─────  (마스터 → 슬레이브)
+MISO ────[MSB]──────────────────────────[LSB]─────  (슬레이브 → 마스터)
+         ↑ 전이중</code></pre>
+
+<p>BH25D16A의 최대 클럭 주파수는 일반 읽기 시 55MHz, 고속&#x2F;듀얼 읽기 시 108MHz입니다. 저는 CH341A 프로그래머를 사용하여 NOR 플래시와 SPI 통신했습니다. <a target="_blank" rel="noopener" href="https://flashrom.org/">flashrom</a>의 spispeed는 2MHz로 고정이며, 이는 NOR 플래시의 최대 클럭 주파수 범위 내에 있으므로 별도의 속도 조정 없이 플래시 메모리를 읽을 수 있었습니다.</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.jpeg" alt="FlashROM-dump"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/flashrom.png" alt="flashrom"><br>읽어온 펌웨어의 안정성을 확인하기 위해 총 두 번 바이너리를 추출한 후 각 바이너리의 MD5 해시값을 비교했습니다.</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/md5sum.png" alt="md5sum"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/binwalk-firmware.png" alt="binwalk firmware"></p>
+<p>바이너리의 MD5 해시는 모두 동일했습니다. 펌웨어에는 gzip으로 압축된 데이터와 LZMA로 압축된 리소스가 포함되어 있습니다. LZMA로 압축된 리소스는 부팅 시퀀스에서 RAM으로 압축 해제됩니다. 펌웨어 정적 분석을 수행하기 전에 올바른 메모리 주소에 매핑된 세그먼트를 생성하기 위해서 SoC의 메모리 맵을 식별해야 합니다.</p>
+<p>그래서 EMI (Electromagnetic Interference) 차폐막을 제거하고 SoC 모델을 확인했습니다. 해당 SoC는 MIPS 아키텍처 기반의 RTL8197F 제품군에 속합니다.</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="EMI-Shield open"></p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="SoC"></p>
+<h1 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h1><p><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="boot-sequence-diagram"></p>
+<h1 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h1><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="ROM memory map"><br><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-vector-table.png" alt="Stage 1 BL vector table"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-reset_entry.png" alt="Stage 1 BL reset_entry"></p>
+<p>Stage 1 Boot ROM 코드는 부팅 로그를 출력하고, D-Cache (데이터 캐시) 와 I-Cache (명령어 캐시) 를 무효화하고, Stage 1.5 부트로더 (0xB0007000) 를 DRAM (0x80100000) 에 로드한 후 해당 위치로 점프합니다.<br>그래서 다음과 같이 새로운 DRAM 세그먼트를 생성했습니다:</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1.5-BL-segment.png" alt="Stage 1.5 BL segment"></p>
+<h1 id="Boot-Stage-1-5"><a href="#Boot-Stage-1-5" class="headerlink" title="Boot Stage 1.5"></a>Boot Stage 1.5</h1><pre><code class="hljs c">DRAM:<span class="hljs-number">80100000</span>     <span class="hljs-meta"># int dram_entry()</span>
+DRAM:<span class="hljs-number">80100000</span>    dram_entry:
+DRAM:<span class="hljs-number">80100000</span>                    li      $t0, unk_8010B4C0
+DRAM:<span class="hljs-number">80100008</span>                    nop
+DRAM:<span class="hljs-number">8010000</span>C                    addi    $t0, <span class="hljs-number">0x2000</span>
+DRAM:<span class="hljs-number">80100010</span>                    nop
+DRAM:<span class="hljs-number">80100014</span>                    move    $sp, $t0
+DRAM:<span class="hljs-number">80100018</span>                    nop
+DRAM:<span class="hljs-number">8010001</span>C                    jal     boot_stage1_5_main
+DRAM:<span class="hljs-number">80100020</span>                    nop
+DRAM:<span class="hljs-number">80100024</span>                    nop
+DRAM:<span class="hljs-number">80100028</span>                    nop
+DRAM:<span class="hljs-number">8010002</span>C                    nop
+DRAM:<span class="hljs-number">8010002</span>C     # End of function dram_entry
+...
+
+<span class="hljs-type">int</span> <span class="hljs-title function_">boot_stage1_5_main</span><span class="hljs-params">()</span>
+&#123;
+  <span class="hljs-type">int</span> v0; <span class="hljs-comment">// $a0</span>
+  <span class="hljs-type">int</span> v1; <span class="hljs-comment">// $a1</span>
+  <span class="hljs-type">int</span> v2; <span class="hljs-comment">// $a2</span>
+  <span class="hljs-type">int</span> v3; <span class="hljs-comment">// $a3</span>
+  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v5; <span class="hljs-comment">// [sp+20h] [-Ch] BYREF</span>
+  <span class="hljs-type">int</span> v6; <span class="hljs-comment">// [sp+24h] [-8h] BYREF</span>
+
+  v5 = <span class="hljs-number">0x7FFFFFFF</span>;
+  v6 = <span class="hljs-number">0x7FFFFFFF</span>;
+  gzip_decompress(byte_80101D60, &amp;v5, <span class="hljs-number">0x80000000</span>, &amp;v6); <span class="hljs-comment">// gzip_decompress(0x80101D60, &amp;in_size, 0x80000000, &amp;out_size)</span>
+  post_decompress_init();                       <span class="hljs-comment">// D-cache writeback + I-cache invalidate — synchronize released code cache</span>
+  <span class="hljs-keyword">return</span> MEMORY[<span class="hljs-number">0x80000000</span>](v0, v1, v2, v3);    <span class="hljs-comment">// jalr 0x80000000 -&gt; Stage 2 Bootloader(&quot;RTL8197F-VG boot version:614&quot;)</span>
+&#125;</code></pre>
+<p>Stage 1.5 부트로더는 gzip으로 압축된 Stage 2 부트로더 (0x80101D60) 를 KSEG0 (0x80000000) 으로 압축 해제하고, 명령어 캐시와 데이터 캐시를 동기화 (D-Cache 쓰기 + I-Cache 무효화) 한 후 실행합니다. </p>
+<h1 id="Boot-Stage-2"><a href="#Boot-Stage-2" class="headerlink" title="Boot Stage 2"></a>Boot Stage 2</h1><pre><code class="hljs c">DRAM:<span class="hljs-number">80000000</span>     # Segment type: Pure code
+DRAM:<span class="hljs-number">80000000</span>                    .text # DRAM     <span class="hljs-comment">// vector table</span>
+DRAM:<span class="hljs-number">80000000</span>                    b       loc_8000040C     # DATA XREF: sub_80003130+<span class="hljs-number">70</span>↓o
+DRAM:<span class="hljs-number">80000004</span>                    nop
+DRAM:<span class="hljs-number">80000004</span>     # ---------------------------------------------------------------------------
+DRAM:<span class="hljs-number">80000008</span>                    .byte    <span class="hljs-number">0</span>
+...
+
+DRAM:<span class="hljs-number">8000040</span>C     # ---------------------------------------------------------------------------
+DRAM:<span class="hljs-number">8000040</span>C
+DRAM:<span class="hljs-number">8000040</span>C    loc_8000040C:                            # CODE XREF: DRAM:<span class="hljs-number">80000000</span>↑j
+DRAM:<span class="hljs-number">8000040</span>C                    mtc0    $zero, WatchLo   # Memory reference trap address low bits
+DRAM:<span class="hljs-number">80000410</span>                    mtc0    $zero, WatchHi   # Memory reference trap address high bits
+DRAM:<span class="hljs-number">80000414</span>                    mtc0    $zero, Cause     # Cause of last exception
+DRAM:<span class="hljs-number">80000418</span>                    mfc0    $t0, SR          # Status <span class="hljs-keyword">register</span>
+DRAM:<span class="hljs-number">8000041</span>C                    li      $at, <span class="hljs-number">0x1000001F</span>
+DRAM:<span class="hljs-number">80000424</span>                    or      $t0, $at
+DRAM:<span class="hljs-number">80000428</span>                    xori    $t0, <span class="hljs-number">0x1F</span>
+DRAM:<span class="hljs-number">8000042</span>C                    mtc0    $t0, SR          # Status <span class="hljs-keyword">register</span>
+DRAM:<span class="hljs-number">80000430</span>                    ehb
+DRAM:<span class="hljs-number">80000434</span>                    mtc0    $zero, Count     # Timer Count
+DRAM:<span class="hljs-number">80000438</span>                    mtc0    $zero, Compare   # Timer Compare
+DRAM:<span class="hljs-number">8000043</span>C                    lui     $sp, <span class="hljs-number">0x8070</span>
+DRAM:<span class="hljs-number">80000440</span>                    nop
+DRAM:<span class="hljs-number">80000444</span>                    li      $s0, <span class="hljs-number">0x80018B90</span>
+DRAM:<span class="hljs-number">8000044</span>C                    li      $s1, <span class="hljs-number">0x80437F10</span>
+DRAM:<span class="hljs-number">80000454</span>                    move    $t0, $s0
+DRAM:<span class="hljs-number">80000458</span>
+DRAM:<span class="hljs-number">80000458</span>    loc_80000458:                            # CODE XREF: DRAM:<span class="hljs-number">80000460</span>↓j
+DRAM:<span class="hljs-number">80000458</span>                    sw      $zero, <span class="hljs-number">0</span>($t0)
+DRAM:<span class="hljs-number">8000045</span>C                    addi    $t0, <span class="hljs-number">4</span>
+DRAM:<span class="hljs-number">80000460</span>                    bne     $t0, $s1, loc_80000458
+DRAM:<span class="hljs-number">80000464</span>                    nop
+DRAM:<span class="hljs-number">80000468</span>                    nop
+DRAM:<span class="hljs-number">8000046</span>C                    jal     sub_8000B7E0    <span class="hljs-comment">// main initialization</span>
+DRAM:<span class="hljs-number">80000470</span>                    nop
+DRAM:<span class="hljs-number">80000474</span>                    nop
+DRAM:<span class="hljs-number">80000478</span>
+DRAM:<span class="hljs-number">80000478</span>    loc_80000478:                            # CODE XREF: DRAM:loc_80000478↓j
+DRAM:<span class="hljs-number">80000478</span>                    b       loc_80000478
+DRAM:<span class="hljs-number">8000047</span>C                    nop
+...</code></pre>
+<pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">sub_8000B7E0</span><span class="hljs-params">()</span>
+&#123;
+  sub_8000B7A8();
+  <span class="hljs-keyword">return</span> ((<span class="hljs-type">int</span> (*)(<span class="hljs-type">void</span>))((<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>)sub_8000C328 &amp; <span class="hljs-number">0xDFFFFFFF</span>))();
+&#125;
+
+<span class="hljs-type">int</span> <span class="hljs-title function_">sub_8000C328</span><span class="hljs-params">()</span>
+&#123;
+  <span class="hljs-type">unsigned</span> __int32 v0; <span class="hljs-comment">// $at</span>
+  _BYTE v2[<span class="hljs-number">16</span>]; <span class="hljs-comment">// [sp+20h] [-10h] BYREF</span>
+
+  MEMORY[<span class="hljs-number">0x800247F0</span>] = <span class="hljs-number">0</span>;
+  MEMORY[<span class="hljs-number">0x800247F4</span>] = <span class="hljs-number">0</span>;
+  init_rt_uart_1();
+  sub_8000E294();
+  sub_80000CA4();
+  sub_8000E270();
+  sub_8000C1B8();
+  set_gpio_register(<span class="hljs-number">19</span>, <span class="hljs-number">1</span>);                     <span class="hljs-comment">// maybe set uart baudrate to 38400</span>
+  <span class="hljs-keyword">if</span> ( check_PABCD_DAT_register() )
+  &#123;
+    sub_8000D5E0();
+    recovery_mode();
+  &#125;
+  print_boot_info(<span class="hljs-number">0</span>);
+  v0 = _mfc0(<span class="hljs-number">0xCu</span>, <span class="hljs-number">0</span>);
+  _mtc0(<span class="hljs-number">0xCu</span>, <span class="hljs-number">0</span>, v0 | <span class="hljs-number">1</span>);                       <span class="hljs-comment">// enable interrupt</span>
+                                                <span class="hljs-comment">// mtc0 SR |= 1</span>
+  _ehb();
+  sub_80000DF4();
+  sub_8000D5E0();
+  sub_8000CFFC(<span class="hljs-number">4</span>);
+  sub_8000D5E0(
+    <span class="hljs-string">&quot;port link 0x%x 0x%x 0x%x 0x%x\n&quot;</span>,
+    MEMORY[<span class="hljs-number">0xBB80412C</span>],
+    MEMORY[<span class="hljs-number">0xBB804130</span>],
+    MEMORY[<span class="hljs-number">0xBB804134</span>],
+    MEMORY[<span class="hljs-number">0xBB804138</span>]);
+  sub_8000D5E0(<span class="hljs-string">&quot;irq:0x%x\n&quot;</span>, MEMORY[<span class="hljs-number">0xB8003000</span>]);
+  sub_80002E3C();
+  sub_80002E3C();
+  MEMORY[<span class="hljs-number">0xB8003000</span>] &amp;= ~<span class="hljs-number">0x8000u</span>;
+  MEMORY[<span class="hljs-number">0x80018BC4</span>] = <span class="hljs-number">0</span>;
+  <span class="hljs-keyword">return</span> firmware_load(<span class="hljs-number">1</span>, <span class="hljs-number">0</span>, (<span class="hljs-type">int</span>)v2);
+&#125;
+
+<span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">firmware_load</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, <span class="hljs-type">int</span> a2, <span class="hljs-type">int</span> a3)</span>
+&#123;
+  _BYTE v5[<span class="hljs-number">8</span>]; <span class="hljs-comment">// [sp+18h] [-8h] BYREF</span>
+
+  <span class="hljs-keyword">if</span> ( !a1 )
+    sub_8000E22C();
+  <span class="hljs-keyword">if</span> ( sub_8000E4C0(<span class="hljs-number">1200000000</span>) == <span class="hljs-number">1</span> )
+  &#123;
+    sub_8000D3D4(<span class="hljs-string">&quot;\nEscape booting by user\n&quot;</span>);
+    sub_8000E22C();
+  &#125;
+  <span class="hljs-keyword">if</span> ( !check_firmware_integrity(a3, v5) )
+    sub_8000E22C();
+  <span class="hljs-keyword">return</span> load_firmware_n_jump(MEMORY[<span class="hljs-number">0x80018BC4</span>], a3);
+&#125;</code></pre>
+
+<h2 id="Stage-2-Bootloader-Firmware-Integrity-Verification"><a href="#Stage-2-Bootloader-Firmware-Integrity-Verification" class="headerlink" title="Stage 2 Bootloader: Firmware Integrity Verification"></a>Stage 2 Bootloader: Firmware Integrity Verification</h2><pre><code class="hljs c"><span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">check_firmware_integrity</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, <span class="hljs-type">int</span> a2)</span>
+&#123;
+  <span class="hljs-type">int</span> result; <span class="hljs-comment">// $v0</span>
+  _BYTE v3[<span class="hljs-number">8</span>]; <span class="hljs-comment">// [sp+18h] [-14h] BYREF</span>
+  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v4; <span class="hljs-comment">// [sp+20h] [-Ch]</span>
+  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v5; <span class="hljs-comment">// [sp+24h] [-8h]</span>
+
+  MEMORY[<span class="hljs-number">0x80018BC4</span>] = <span class="hljs-number">0xB0020000</span>;
+  result = check_firmware_header(<span class="hljs-number">0xB0020000</span>, a1, a2);
+  <span class="hljs-keyword">if</span> ( result == <span class="hljs-number">2</span> )
+  &#123;
+    sub_80008F40(v3, <span class="hljs-number">0x20000</span>, <span class="hljs-number">16</span>);
+    <span class="hljs-keyword">return</span> verify_rootfs_checksum(
+             (HIBYTE(v5) | (v5 &lt;&lt; <span class="hljs-number">24</span>) | ((v5 &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((v5 &amp; <span class="hljs-number">0xFF0000</span>) &gt;&gt; <span class="hljs-number">8</span>))
+           + (HIBYTE(v4) | (v4 &lt;&lt; <span class="hljs-number">24</span>) | ((v4 &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((v4 &amp; <span class="hljs-number">0xFF0000</span>) &gt;&gt; <span class="hljs-number">8</span>))
+           - <span class="hljs-number">1342177264</span>);
+  &#125;
+  <span class="hljs-keyword">return</span> result;
+&#125;
+
+<span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">check_firmware_header</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, _DWORD *a2)</span>
+&#123;
+  ...
+  <span class="hljs-keyword">if</span> ( !sub_80008F40(a2, a1, <span class="hljs-number">16</span>) )
+  &#123;
+    sub_8000D3D4(<span class="hljs-string">&quot;flashread fail,addr:%x,size:%d\n&quot;</span>, a1, <span class="hljs-number">16</span>);
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+  &#125;
+  a2[<span class="hljs-number">1</span>] = HIBYTE(a2[<span class="hljs-number">1</span>]) | (a2[<span class="hljs-number">1</span>] &lt;&lt; <span class="hljs-number">24</span>) | ((a2[<span class="hljs-number">1</span>] &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((a2[<span class="hljs-number">1</span>] &amp; <span class="hljs-number">0xFF0000u</span>) &gt;&gt; <span class="hljs-number">8</span>);
+  a2[<span class="hljs-number">2</span>] = HIBYTE(a2[<span class="hljs-number">2</span>]) | (a2[<span class="hljs-number">2</span>] &lt;&lt; <span class="hljs-number">24</span>) | ((a2[<span class="hljs-number">2</span>] &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((a2[<span class="hljs-number">2</span>] &amp; <span class="hljs-number">0xFF0000u</span>) &gt;&gt; <span class="hljs-number">8</span>);
+  a2[<span class="hljs-number">3</span>] = HIBYTE(a2[<span class="hljs-number">3</span>]) | (a2[<span class="hljs-number">3</span>] &lt;&lt; <span class="hljs-number">24</span>) | ((a2[<span class="hljs-number">3</span>] &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((a2[<span class="hljs-number">3</span>] &amp; <span class="hljs-number">0xFF0000u</span>) &gt;&gt; <span class="hljs-number">8</span>);
+  <span class="hljs-built_in">strncpy</span>(&amp;v13, <span class="hljs-string">&quot;cs6c&quot;</span>, <span class="hljs-number">4</span>);
+  <span class="hljs-built_in">strncpy</span>(&amp;v14, <span class="hljs-string">&quot;cr6c&quot;</span>, <span class="hljs-number">4</span>);
+  v5 = <span class="hljs-number">1</span>;
+  <span class="hljs-keyword">if</span> ( !<span class="hljs-built_in">strcmp</span>(a2, &amp;v13, <span class="hljs-number">4</span>) || (v5 = <span class="hljs-number">2</span>, !<span class="hljs-built_in">strcmp</span>(a2, &amp;v14, <span class="hljs-number">4</span>)) )
+  &#123;
+      ...
+      <span class="hljs-keyword">if</span> ( a2[<span class="hljs-number">3</span>] == v6 )
+      &#123;
+        result = v5;
+        <span class="hljs-keyword">if</span> ( !v7 )
+          <span class="hljs-keyword">return</span> result;
+        sub_8000D3D4(<span class="hljs-string">&quot;check failed, ret:%d, sum:%x\n&quot;</span>, v5, v7);
+        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+      &#125;
+    &#125;
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+  &#125;
+  sub_8000D3D4(<span class="hljs-string">&quot;No sys signature at %X!\n&quot;</span>, a1 + <span class="hljs-number">1342177280</span>);
+  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+&#125;</code></pre>
+<p><code>check_firmware_integrity</code> 함수는 RealTek 펌웨어의 매직 바이트인 “cs6c”와 “cr6c”를 기준으로 펌웨어의 매직 바이트 무결성을 검사합니다.</p>
+<ul>
+<li>cs6c: LZMA로 압축된 펌웨어 이미지</li>
+<li>cr6c: 루트 파일 시스템 이미지</li>
+</ul>
+<p>이 경우 펌웨어에는 “cs6c” 매직 바이트가 포함되어 있는데, 이는 루트 파일 시스템이 아닌 LZMA로 압축된 이미지임을 나타냅니다.</p>
+<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/xxd-firmware-magic-bytes.png" alt="xxd firmware magic bytes"></p>
+<p>또한, 매직 바이트가 “cr6c”인지 여부에 따라 루트 파일 시스템 체크섬 값을 검증합니다.</p>
+<pre><code class="hljs c"><span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">load_firmware_n_jump</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, _DWORD *a2)</span>
+&#123;
+  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v5; <span class="hljs-comment">// $a0</span>
+  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v6; <span class="hljs-comment">// $a2</span>
+  <span class="hljs-type">int</span> (*v7)(<span class="hljs-type">void</span>); <span class="hljs-comment">// $s0</span>
+  <span class="hljs-type">unsigned</span> __int32 v8; <span class="hljs-comment">// $at</span>
+
+  <span class="hljs-keyword">if</span> ( !sub_80008F40(a2, a1, <span class="hljs-number">16</span>) )
+    <span class="hljs-keyword">return</span> sub_8000D3D4(<span class="hljs-string">&quot;sflashread fail,addr=%x,size=%d\n&quot;</span>, a1, <span class="hljs-number">16</span>);
+  v5 = HIBYTE(a2[<span class="hljs-number">1</span>]) | (a2[<span class="hljs-number">1</span>] &lt;&lt; <span class="hljs-number">24</span>) | ((a2[<span class="hljs-number">1</span>] &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((a2[<span class="hljs-number">1</span>] &amp; <span class="hljs-number">0xFF0000u</span>) &gt;&gt; <span class="hljs-number">8</span>);
+  a2[<span class="hljs-number">1</span>] = v5;
+  a2[<span class="hljs-number">2</span>] = HIBYTE(a2[<span class="hljs-number">2</span>]) | (a2[<span class="hljs-number">2</span>] &lt;&lt; <span class="hljs-number">24</span>) | ((a2[<span class="hljs-number">2</span>] &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((a2[<span class="hljs-number">2</span>] &amp; <span class="hljs-number">0xFF0000u</span>) &gt;&gt; <span class="hljs-number">8</span>);
+  v6 = HIBYTE(a2[<span class="hljs-number">3</span>]) | (a2[<span class="hljs-number">3</span>] &lt;&lt; <span class="hljs-number">24</span>) | ((a2[<span class="hljs-number">3</span>] &amp; <span class="hljs-number">0xFF00</span>) &lt;&lt; <span class="hljs-number">8</span>) | ((a2[<span class="hljs-number">3</span>] &amp; <span class="hljs-number">0xFF0000u</span>) &gt;&gt; <span class="hljs-number">8</span>);
+  a2[<span class="hljs-number">3</span>] = v6;
+  sub_80008F40(v5 | <span class="hljs-number">0x20000000</span>, a1 + <span class="hljs-number">1342177296</span>, v6 - <span class="hljs-number">2</span>);
+  MEMORY[<span class="hljs-number">0xB8003000</span>] = <span class="hljs-number">0</span>;
+  MEMORY[<span class="hljs-number">0xB8003528</span>] &amp;= ~<span class="hljs-number">0x400000u</span>;
+  MEMORY[<span class="hljs-number">0xB8003528</span>] &amp;= ~<span class="hljs-number">0x4000000u</span>;
+  sub_8000D3D4(<span class="hljs-string">&quot;Jump to image start:0x%x...\n&quot;</span>, a2[<span class="hljs-number">1</span>]);
+  v7 = (<span class="hljs-type">int</span> (*)(<span class="hljs-type">void</span>))a2[<span class="hljs-number">1</span>];
+  MEMORY[<span class="hljs-number">0xB8003000</span>] = <span class="hljs-number">0</span>;
+  MEMORY[<span class="hljs-number">0xB8003004</span>] = <span class="hljs-number">0</span>;
+  MEMORY[<span class="hljs-number">0xB8003114</span>] = <span class="hljs-number">0</span>;
+  MEMORY[<span class="hljs-number">0xB8000010</span>] &amp;= ~<span class="hljs-number">0x800u</span>;
+  MEMORY[<span class="hljs-number">0xBBDC0300</span>] = <span class="hljs-number">-1</span>;
+  MEMORY[<span class="hljs-number">0xBBDC0304</span>] = <span class="hljs-number">-1</span>;
+  v8 = _mfc0(<span class="hljs-number">0xCu</span>, <span class="hljs-number">0</span>);
+  _mtc0(<span class="hljs-number">0xCu</span>, <span class="hljs-number">0</span>, (v8 | <span class="hljs-number">1</span>) ^ <span class="hljs-number">1</span>);
+  _ehb();
+  sub_8000B990();
+  <span class="hljs-keyword">return</span> v7();
+&#125;</code></pre>
+
+<pre><code class="hljs plaintext">RTL8197F-VG boot release version: ... (600MHz)
+Mac addr:...
+port link ...
+Jump to image start:0x80700000...</code></pre>
+
+<p>무결성 검증이 완료되면, Kernel Decompressor를 KSEG0 (0x80700000) 에 로드하고 실행합니다.</p>
+<h1 id="Kernel-Decompressor"><a href="#Kernel-Decompressor" class="headerlink" title="Kernel Decompressor"></a>Kernel Decompressor</h1><pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
+
+DRAM:<span class="hljs-number">80700000</span>     # Segment type: Pure code
+DRAM:<span class="hljs-number">80700000</span>                    .text # DRAM
+DRAM:<span class="hljs-number">80700000</span>                    nop                                                                                                                                                                        
+DRAM:<span class="hljs-number">80700004</span>                    nop
+DRAM:<span class="hljs-number">80700008</span>                                                                                                                                                                                               
+DRAM:<span class="hljs-number">80700008</span>     # =============== S U B R O U T I N E =======================================                                                                                                             
+DRAM:<span class="hljs-number">80700008</span>
+DRAM:<span class="hljs-number">80700008</span>     # Kernel decompressor entry. Loaded at DRAM <span class="hljs-number">0x80700000</span> by Stage <span class="hljs-number">2</span> bootloader.                                                                                                             
+DRAM:<span class="hljs-number">80700008</span>     # BSS clear (<span class="hljs-number">0x80860800</span><span class="hljs-number">-0x80860818</span>), <span class="hljs-built_in">stack</span> setup ($sp=<span class="hljs-number">0x80861818</span>),                                                                                                                        
+DRAM:<span class="hljs-number">80700008</span>     <span class="hljs-meta"># then j decompress_kernal_n_jump (skips prologue, enters at 0x807001E8).                                                                                                                 </span>
+DRAM:<span class="hljs-number">80700008</span>                                                                                                                                                                                               
+DRAM:<span class="hljs-number">80700008</span>     <span class="hljs-meta"># void __noreturn kernel_decompressor_entry()                                                                                                                                             </span>
+DRAM:<span class="hljs-number">80700008</span>    kernel_decompressor_entry:                                                                                                                                                                 
+DRAM:<span class="hljs-number">80700008</span>                    li      $s0, <span class="hljs-number">0x80860800</span>          # BSS start                                                                                                                               
+DRAM:<span class="hljs-number">80700010</span>                    li      $s1, <span class="hljs-number">0x80860818</span>          # BSS end (<span class="hljs-number">24</span> bytes)                                                                                                                      
+DRAM:<span class="hljs-number">80700018</span>                    beq     $s0, $s1, loc_80700034                                                                                                                                             
+DRAM:<span class="hljs-number">8070001</span>C                    nop                                                                                                                                                                        
+DRAM:<span class="hljs-number">80700020</span>                    move    $t0, $s0                                                                                                                                                           
+DRAM:<span class="hljs-number">80700024</span>                                                                                                                                                                                               
+DRAM:<span class="hljs-number">80700024</span>    loc_80700024:                                    # BSS clear loop                                                                                                                          
+DRAM:<span class="hljs-number">80700024</span>                    sw      $zero, <span class="hljs-number">0</span>($t0)                                                                                                                                                      
+DRAM:<span class="hljs-number">80700028</span>                    addi    $t0, <span class="hljs-number">4</span>                                                                                                                                                             
+DRAM:<span class="hljs-number">8070002</span>C                    bne     $t0, $s1, loc_80700024                                                                                                                                             
+DRAM:<span class="hljs-number">80700030</span>                    nop                                                                                                                                                                        
+DRAM:<span class="hljs-number">80700034</span>                                                   
+DRAM:<span class="hljs-number">80700034</span>    loc_80700034:                                                                                                                                                                              
+DRAM:<span class="hljs-number">80700034</span>                    move    $t0, $s1                 # $t0 = <span class="hljs-number">0x80860818</span>                                                                                                                        
+DRAM:<span class="hljs-number">80700038</span>                    addi    $t0, <span class="hljs-number">0x1000</span>              # $t0 = <span class="hljs-number">0x80861818</span>
+DRAM:<span class="hljs-number">8070003</span>C                    move    $sp, $t0                 # $sp = <span class="hljs-number">0x80861818</span>                                                                                                                        
+DRAM:<span class="hljs-number">80700040</span>                    j       decompress_kernal_n_jump <span class="hljs-meta"># enters at 0x807001E8 (skips prologue)</span>
+DRAM:<span class="hljs-number">80700044</span>                    move    $a0, $t0                 <span class="hljs-meta"># delay: $a0 = $sp base                                                                                                                   </span>
+DRAM:<span class="hljs-number">80700044</span>     # End of function kernel_decompressor_entrys
+...                                                                                                                                                                                                         
+                                                                
+DRAM:<span class="hljs-number">807001E8</span>     # Main decompression routine. Entered at <span class="hljs-number">0x807001E8</span> (mid-function, prologue skipped).                                                                                                     
+DRAM:<span class="hljs-number">807001E8</span>     # Prints <span class="hljs-string">&quot;decompressing kernel:&quot;</span>, calls LZMA wrapper to decompress
+DRAM:<span class="hljs-number">807001E8</span>     # eCos kernel to <span class="hljs-number">0xA0000000</span> (KSEG1 uncached DRAM).                                                                                                                                        
+DRAM:<span class="hljs-number">807001E8</span>     # After LZMA wrapper returns to <span class="hljs-number">0x80700220</span>, boots kernel at <span class="hljs-number">0xA0000600.</span>                                                                                                                   
+DRAM:<span class="hljs-number">807001E8</span>     # Note: <span class="hljs-number">0xA0000600</span> = <span class="hljs-number">0x80000600</span> (same physical DRAM, uncached vs cached).                                                                                                                 
+DRAM:<span class="hljs-number">807001E8</span>                                                                                                                                                                                               
+DRAM:<span class="hljs-number">807001E8</span>    decompress_kernal_n_jump:                                                                                                                                                                  
+DRAM:<span class="hljs-number">807001E8</span>                    lui     $t8, <span class="hljs-number">0x8086</span>                                                                                                                                                        
+DRAM:<span class="hljs-number">807001</span>EC                    move    $s1, $a0                 # $s1 = <span class="hljs-number">0x80861818</span> (<span class="hljs-built_in">stack</span> base from entry)                                                                                                
+DRAM:<span class="hljs-number">807001F</span>0                    lui     $a0, <span class="hljs-number">0x8070</span>                                                                                                                                                        
+DRAM:<span class="hljs-number">807001F</span>4                    sw      $zero, <span class="hljs-number">0x80860800</span>        <span class="hljs-meta"># clear decompressor status                                                                                                               </span>
+DRAM:<span class="hljs-number">807001F</span>8                    lui     $s0, <span class="hljs-number">0xB800</span>                                                                                                                                                        
+DRAM:<span class="hljs-number">807001F</span>C                    lui     $t8, <span class="hljs-number">0x8086</span>                                                                                                                                                        
+DRAM:<span class="hljs-number">80700200</span>                    li      $a0, fmt                 <span class="hljs-meta"># printf(<span class="hljs-string">&quot;decompressing kernel:\n&quot;</span>)                                                                                                       </span>
+DRAM:<span class="hljs-number">80700204</span>                    jal     sub_80700D34                                                                                                                                                       
+DRAM:<span class="hljs-number">80700208</span>                    sw      $s0, <span class="hljs-number">0x80860804</span>          <span class="hljs-meta"># delay: store MMIO base 0xB8000000</span>
+DRAM:<span class="hljs-number">8070020</span>C                    move    $a3, $zero               # $a3 = <span class="hljs-number">0</span> (flags)                                                                                                                         
+DRAM:<span class="hljs-number">80700210</span>                    lui     $a2, <span class="hljs-number">0x8100</span>              # $a2 = <span class="hljs-number">0x81000000</span> (output limit, <span class="hljs-number">16</span>MB)                                                                                                   
+DRAM:<span class="hljs-number">80700214</span>                    addiu   $a1, $s1, <span class="hljs-number">0x1000</span>         # $a1 = LZMA compressed data source                                                                                                       
+DRAM:<span class="hljs-number">80700218</span>                    jal     LZMA_decompress_engine_wrapper  # $ra = <span class="hljs-number">0x80700220</span>                                                                                                                 
+DRAM:<span class="hljs-number">8070021</span>C                    lui     $a0, <span class="hljs-number">0xA000</span>              <span class="hljs-meta"># delay: $a0 = 0xA0000000 (dst, KSEG1 uncached)                                                                                                                                                                                          </span>
+...                                                                                                                                                                                                         
+                                                                                                                                                                                                            
+DRAM:<span class="hljs-number">80701458</span>     # LZMA decompression wrapper. Frameless (no prologue, uses caller <span class="hljs-built_in">stack</span>).                                                                                                                 
+DRAM:<span class="hljs-number">80701458</span>     # Parses LZMA header at <span class="hljs-number">0x80702800</span> (props: <span class="hljs-number">5</span>D, dictSize=<span class="hljs-number">8</span>MB),
+DRAM:<span class="hljs-number">80701458</span>     <span class="hljs-meta"># calls LZMA_decompress engine, prints status messages.                                                                                                                                   </span>
+DRAM:<span class="hljs-number">80701458</span>     # On success: prints <span class="hljs-string">&quot;done, booting the kernel.&quot;</span> and returns <span class="hljs-number">0.</span>                                                                                                                           
+DRAM:<span class="hljs-number">80701458</span>     # Return: jr $ra → <span class="hljs-number">0x80700220</span> (back to decompress_kernal_n_jump).
+DRAM:<span class="hljs-number">80701458</span>                                                                                                                                                                                               
+DRAM:<span class="hljs-number">80701458</span>    LZMA_decompress_engine_wrapper:                
+DRAM:<span class="hljs-number">80701458</span>                    sw      $s3, <span class="hljs-number">0xC0</span>($sp)           <span class="hljs-meta"># save callee regs to caller stack                                                                                                        </span>
+DRAM:<span class="hljs-number">8070145</span>C                    sw      $s2, <span class="hljs-number">0xBC</span>($sp)                                                                                                                                                     
+DRAM:<span class="hljs-number">80701460</span>                    sw      $s1, <span class="hljs-number">0xB8</span>($sp)                                                                                                                                                     
+DRAM:<span class="hljs-number">80701464</span>                    sw      $s0, <span class="hljs-number">0xB4</span>($sp)                                                                                                                                                     
+DRAM:<span class="hljs-number">80701470</span>                    sw      $a0, <span class="hljs-number">0x80860C20</span>          <span class="hljs-meta"># save dst = 0xA0000000                                                                                                                   </span>
+DRAM:<span class="hljs-number">8070148</span>C                    sw      $a1, <span class="hljs-number">0x80860C1C</span>          <span class="hljs-meta"># save lzma_src                                                                                                                           </span>
+DRAM:<span class="hljs-number">80701494</span>                    sw      $a2, <span class="hljs-number">0x80860C18</span>          <span class="hljs-meta"># save limit = 0x81000000                                                                                                                 </span>
+DRAM:<span class="hljs-number">80701484</span>                    sw      $a3, <span class="hljs-number">0x80860814</span>          <span class="hljs-meta"># save flags = 0                                                                                                                          </span>
+DRAM:<span class="hljs-number">80701490</span>                    jal     sub_80700D34             <span class="hljs-meta"># printf(<span class="hljs-string">&quot;Uncompressing...&quot;</span>)                                                                                                              </span>
+DRAM:<span class="hljs-number">807014</span>A0                    addiu   $s2, $t8, <span class="hljs-number">0x2800</span>         # $s2 = <span class="hljs-number">0x80702800</span> (LZMA metadata)                                                                                                        
+DRAM:<span class="hljs-number">807014</span>AC                    lwl     $s0, <span class="hljs-number">3</span>($s2)              <span class="hljs-meta"># load uncompressed size (big-endian)                                                                                                     </span>
+DRAM:<span class="hljs-number">807014B</span>C                    wsbh    $s0                      <span class="hljs-meta"># byte-swap: big-endian → little-endian                                                                                                   </span>
+DRAM:<span class="hljs-number">807014</span>C4                    rotr    $s0, <span class="hljs-number">0x10</span>                <span class="hljs-meta"># complete 32-bit endian swap                                                                                                             </span>
+DRAM:<span class="hljs-number">807014</span>C8                    jal     memcpy_custom            <span class="hljs-meta"># memcpy(sp+0x94, 0x80702808, 5)                                                                                                          </span>
+                                                                  <span class="hljs-meta"># copy LZMA props: 5D 00 00 80 00                                                                                                        </span>
+...                                                                                                                                                                                                         
+DRAM:<span class="hljs-number">807015</span>D4                    jal     LZMA_decompress          # LZMA decode: ~<span class="hljs-number">1.4</span>MB → <span class="hljs-number">5.22</span>MB                                                                                                            
+                                                                  <span class="hljs-meta"># output to 0xA0000000 (uncached DRAM)                                                                                                   </span>
+DRAM:<span class="hljs-number">807015</span>DC                    beqz    $v0, success             <span class="hljs-meta"># <span class="hljs-keyword">if</span> result == 0 → success                                                                                                                </span>
+DRAM:<span class="hljs-number">807015E8</span>                    li      $a1, <span class="hljs-string">&quot;LZMA: Decoding error = %d\n&quot;</span>                                                                                                                                 
+DRAM:<span class="hljs-number">807015</span>EC                    jal     <span class="hljs-built_in">sprintf</span>                  <span class="hljs-meta"># format <span class="hljs-keyword">error</span> message                                                                                                                    </span>
+...                                                                                                                                                                                               
+                                                                                                                                                                                                            
+success:                                                                                                                                                                                                    
+DRAM:<span class="hljs-number">807015F</span>C                    li      $a0, <span class="hljs-string">&quot;done, booting the kernel.\n&quot;</span>
+DRAM:<span class="hljs-number">80701604</span>                    jal     sub_80700D34             <span class="hljs-meta"># printf → UART output                                                                                                                    </span>
+DRAM:<span class="hljs-number">8070160</span>C                    move    $v0, $zero               <span class="hljs-meta"># return 0 (success)                                                                                                                      </span>
+DRAM:<span class="hljs-number">80701610</span>                    lw      $ra, <span class="hljs-number">0xCC</span>($sp)           <span class="hljs-meta"># restore $ra (= 0x80700220, set by jal at 0x80700218)                                                                                    </span>
+DRAM:<span class="hljs-number">8070162</span>C                    jr      $ra                      <span class="hljs-meta"># return to decompress_kernal_n_jump @ 0x80700220</span>
+DRAM:<span class="hljs-number">80701630</span>                    addiu   $sp, <span class="hljs-number">0xD0</span>                <span class="hljs-meta"># delay: restore caller<span class="hljs-string">&#x27;s stack</span></span></code></pre>
+<pre><code class="hljs plaintext">// Generated by Claude Code Opus 4.6
+
+kernel_decompressor_entry (0x80700008)
+  BSS clear → $sp setup → j 0x807001E8
+                              │
+decompress_kernal_n_jump (0x807001E8)  ◄─┘
+  printf(&quot;decompressing kernel:&quot;)
+  │
+  jal LZMA_decompress_engine_wrapper ──┐   $ra = 0x80700220
+  $a0 = 0xA0000000 (uncached dst)      │
+                                       ▼
+  LZMA_decompress_engine_wrapper (0x80701458)
+    printf(&quot;Uncompressing...&quot;)
+    parse LZMA header (0x80702800)
+    jal LZMA_decompress → 1.4MB → 5.22MB
+    printf(&quot;done, booting the kernel.&quot;)
+    lw $ra, 0xCC($sp)  ← $ra = 0x80700220
+    jr $ra ─────────────────────────────┐
+                                        │
+decompress_kernal_n_jump + 0x38  ◄──────┘  (0x80700220)
+  ... kernel jump code ...
+  jr 0xA0000600 → eCos kernel entry point</code></pre>
+
+<p>LZMA (Lempel-Ziv-Markov chain Algorithm) Decompressor는 커널 코드를 KSEG1 (0xA0000000) 으로 압축 해제를 수행합니다.</p>
+<h2 id="Why-KSEG1-for-Kernel-Decompression-Output"><a href="#Why-KSEG1-for-Kernel-Decompression-Output" class="headerlink" title="Why KSEG1 for Kernel Decompression Output?"></a>Why KSEG1 for Kernel Decompression Output?</h2><p>압축 해제된 커널은 0xA0000000 (KSEG1, 캐시되지 않음) 에 기록되며, 0x80000000 (KSEG0, 캐시됨) 에는 기록되지 않습니다. 두 주소 모두 동일한 물리적 DRAM 주소인 0x00000000에 매핑됩니다:</p>
+<pre><code class="hljs plaintext">MIPS Virtual Address    Cache Mode    Physical Address
+────────────────────    ──────────    ────────────────
+0xA0000000 (KSEG1)       Uncached     0x00000000 (DRAM)
+0x80000000 (KSEG0)        Cached      0x00000000 (DRAM)   &lt;- 동일한 물리 주소</code></pre>
+
+<p>KSEG0 (0x80000000, 캐시됨) 에 데이터를 쓰면, 압축 해제된 데이터가 D-Cache에 저장되고, 최종적으로 DRAM에 다시 기록됩니다. 하지만 MIPS 아키텍처는 D-Cache와 I-Cache 간의 일관성을 유지하지 않기 때문에, I-Cache에는 여전히 오래된 명령어가 남아 있어 시스템 충돌이 발생할 수 있습니다.</p>
+<p>KSEG1 (0xA0000000, 캐시되지 않음) 에 기록함으로써, 압축 해제된 데이터는 캐시를 거치지 않고 DRAM으로 직접 전송됩니다. 이후 CPU가 0x80000600 (KSEG0) 으로 점프하면 I-Cache miss가 발생하고 DRAM에서 최신 명령어를 올바르게 가져옵니다.</p>
+<p>압축 해제가 완료되면, 부트로더는 제어권을 eCos 커널 진입점으로 넘기고 해당 진입점은 HAL을 초기화하고 스케줄러를 시작합니다.</p>
+<h1 id="eCos-Firmware"><a href="#eCos-Firmware" class="headerlink" title="eCos Firmware"></a>eCos Firmware</h1><p>이 시점에서 제어권이 부트로더에서 eCos 커널로 이전되며 이는 펌웨어 초기화에서 RTOS 실행으로의 전환을 의미합니다.</p>
+<pre><code class="hljs c">DRAM:<span class="hljs-number">80000600</span>    eCos_exception_entry:
+DRAM:<span class="hljs-number">80000600</span>                    mfc0    $k0, Cause       # General Exception Vector: dispatch via table at <span class="hljs-number">0x80000400.</span> NOT the startup entry.
+DRAM:<span class="hljs-number">80000604</span>                    nop
+DRAM:<span class="hljs-number">80000608</span>                    andi    $k0, <span class="hljs-number">0x7F</span>
+DRAM:<span class="hljs-number">8000060</span>C                    li      $k1, dword_80000400
+DRAM:<span class="hljs-number">80000614</span>                    add     $k1, $k0
+DRAM:<span class="hljs-number">80000618</span>                    lw      $k1, <span class="hljs-number">0</span>($k1)
+DRAM:<span class="hljs-number">8000061</span>C                    nop
+DRAM:<span class="hljs-number">80000620</span>                    jr      $k1              <span class="hljs-meta"># jump to 0x80000D00</span>
+DRAM:<span class="hljs-number">80000624</span>                    nop
+DRAM:<span class="hljs-number">80000624</span>     # End of function eCos_exception_entry</code></pre>
+<p>첫 Entry에서 제어는 0x80000D00 주소의 리셋 핸들러로 전달됩니다. 이때 예외 벡터 메커니즘은 Cause 레지스터를 사용하지만, 이 시점에는 벡터 테이블이 아직 초기화되지 않았으므로 실행은 리셋 진입점으로 직접 진행됩니다. </p>
+<h2 id="C-Static-Constructors-Thread-Registration"><a href="#C-Static-Constructors-Thread-Registration" class="headerlink" title="C++ Static Constructors: Thread Registration"></a>C++ Static Constructors: Thread Registration</h2><pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
+
+hal_reset_entry @ <span class="hljs-number">0x80000D00</span>:
+DRAM:<span class="hljs-number">80000</span>D0C  li      $k0, <span class="hljs-number">0x80215A44</span>
+DRAM:<span class="hljs-number">80000</span>D20  lui     $at, <span class="hljs-number">0xA000</span>
+DRAM:<span class="hljs-number">80000</span>D24  or      $k0, $at            
+DRAM:<span class="hljs-number">80000</span>D28  jalr    $k0                 
+DRAM:<span class="hljs-number">80000</span>D30  li      $gp, <span class="hljs-number">0x8053FFE0</span>     
+DRAM:<span class="hljs-number">80000</span>D38  li      $sp, <span class="hljs-number">0x805405C0</span>     
+DRAM:<span class="hljs-number">80000</span>D44  li      $a0, <span class="hljs-number">16</span>             ; Initalize exception <span class="hljs-built_in">vector</span> table
+DRAM:<span class="hljs-number">80000</span>D48  li      $a1, <span class="hljs-number">0x80000840</span>     ; default_exception_handler
+DRAM:<span class="hljs-number">80000</span>D50  li      $a2, <span class="hljs-number">0x80000400</span>     ; <span class="hljs-built_in">vector</span> table start address
+loop:
+DRAM:<span class="hljs-number">80000</span>D58  sw      $a1, <span class="hljs-number">0</span>($a2)
+DRAM:<span class="hljs-number">80000</span>D5C  addi    $a2, <span class="hljs-number">4</span>
+DRAM:<span class="hljs-number">80000</span>D60  addi    $a0, <span class="hljs-number">-1</span>
+DRAM:<span class="hljs-number">80000</span>D64  bnez    $a0, loop
+DRAM:<span class="hljs-number">80000</span>D7C  sw      <span class="hljs-number">0x80000948</span>, <span class="hljs-number">0x00</span>($a0)   ; <span class="hljs-built_in">vector</span>[<span class="hljs-number">0</span>] = interrupt handler
+DRAM:<span class="hljs-number">80000</span>D88  sw      <span class="hljs-number">0x80000DFC</span>, <span class="hljs-number">0x24</span>($a0)   ; <span class="hljs-built_in">vector</span>[<span class="hljs-number">9</span>] = breakpoint handler
+DRAM:<span class="hljs-number">80000</span>DA8  jal     hal_platform_init       ; SoC <span class="hljs-keyword">register</span>
+DRAM:<span class="hljs-number">80000</span>DB0  jal     hal_variant_init        
+; C++ <span class="hljs-type">static</span> constructor: <span class="hljs-keyword">register</span> application threads
+DRAM:<span class="hljs-number">80000</span>DB8  jal     cyg_hal_invoke_constructors
+; Start <span class="hljs-title function_">scheduler</span><span class="hljs-params">(no <span class="hljs-keyword">return</span>)</span>
+DRAM:80000DC0  j       cyg_scheduler_start</code></pre>
+<p><code>hal_reset_entry</code> 함수 (0x80000D00) 는 예외 벡터 테이블 (0x80000400) 과 SoC 레지스터를 초기화합니다. 그 후 <code>cyg_hal_invoke_constructors</code>를 호출하여 애플리케이션 스레드를 등록합니다.</p>
+<p><code>cyg_hal_invoke_constructors</code>는 링커가 생성한 함수 포인터 배열인 <code>.ctors</code> 섹션을 순회합니다. 각 포인터는 <code>main</code> 함수 이전에 실행되는 C++ 정적 생성자입니다. </p>
+<pre><code class="hljs c"><span class="hljs-keyword">typedef</span> <span class="hljs-title function_">void</span> <span class="hljs-params">(*ctor_func)</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>;
+<span class="hljs-keyword">extern</span> ctor_func __CTOR_LIST__[];
+
+<span class="hljs-type">void</span> <span class="hljs-title function_">cyg_hal_invoke_constructors</span><span class="hljs-params">()</span> &#123;
+    <span class="hljs-keyword">for</span> (ctor_func *p = &amp;__CTOR_LIST__[<span class="hljs-number">1</span>]; *p != <span class="hljs-literal">NULL</span>; p++)
+        (*p)();   <span class="hljs-comment">// call each constructor</span>
+&#125;</code></pre>
+<p><a target="_blank" rel="noopener" href="https://ecos.sourceware.org/about.html">eCos</a>에서 스레드 생성은 애플리케이션 구조에 따라 <code>cyg_thread_create</code>를 통해 명시적으로 수행하거나 정적 생성자를 통해 암시적으로 수행할 수 있습니다. 많은 eCos 애플리케이션에서 이러한 생성자는 아래와 같이 <code>cyg_thread_create</code>를 호출하여 스케줄러에 스레드를 등록합니다: </p>
+<pre><code class="hljs c"><span class="hljs-type">void</span> __static_init_xxx_main() &#123;
+    cyg_thread_create(
+        PRIORITY,               <span class="hljs-comment">// scheduling priority</span>
+        xxx_app_main,           <span class="hljs-comment">// entry function (0x800xxxxx)</span>
+        <span class="hljs-number">0</span>,                      <span class="hljs-comment">// entry argument</span>
+        <span class="hljs-string">&quot;xxx&quot;</span>,                  <span class="hljs-comment">// thread name</span>
+        stack_base,             <span class="hljs-comment">// stack memory</span>
+        STACK_SIZE,             <span class="hljs-comment">// stack size</span>
+        &amp;thread_handle,         <span class="hljs-comment">// output: handle</span>
+        &amp;thread_obj             <span class="hljs-comment">// output: thread object (HEAP)</span>
+    );
+    cyg_thread_resume(thread_handle);
+&#125;</code></pre>
+
+<h2 id="Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><a href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread" class="headerlink" title="Scheduler Dispatch: Indirect Call to Application Thread"></a>Scheduler Dispatch: Indirect Call to Application Thread</h2><p>모든 생성자가 실행되고 스레드가 등록되면, <code>cyg_scheduler_start</code>는 스케줄링 루프에 진입합니다.</p>
+<pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
+cyg_scheduler_start @ <span class="hljs-number">0x8021DA5C</span>:
+
+DRAM:<span class="hljs-number">8021</span>DA50  lw      $s0, <span class="hljs-number">0x18</span>($s1)       ; $s0 = highest-priority thread <span class="hljs-keyword">struct</span> (from run <span class="hljs-built_in">queue</span>)
+DRAM:<span class="hljs-number">8021</span>DA5C  di                           ; disable interrupts
+DRAM:<span class="hljs-number">8021</span>DA70  jal     sched_lock           ; lock scheduler
+DRAM:<span class="hljs-number">8021</span>DA7C  lw      $t8, <span class="hljs-number">0x14</span>($s0)       ; $t8 = thread-&gt;entry (function pointer)
+DRAM:<span class="hljs-number">8021</span>DA80  j       context_switch       ; <span class="hljs-keyword">switch</span> to thread context
+DRAM:<span class="hljs-number">8021</span>DA84  lw      $a0, <span class="hljs-number">0x00</span>($s0)       ; $a0 = thread-&gt;arg (delay slot)</code></pre>
+<p>eCos는 우선순위 기반 선점형 스케줄러를 사용하며 실행 가능한 스레드 중 가장 우선순위가 높은 스레드가 항상 선택되어 실행됩니다. 스케줄러는 실행 큐에서 스레드 구조체를 가져와 진입 함수 포인터 (오프셋 0x14) 를 추출한 후 컨텍스트 스위치를 수행하여 제어권을 넘깁니다.</p>
+<h1 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h1><p>본 분석에서는 eCos 기반 임베디드 시스템의 부팅 과정을 플래시 메모리 추출부터 RTOS 수준 실행까지 전체적으로 살펴보았습니다.</p>
+<p>시스템이 다음과 같이 여러 단계를 거쳐 부팅 및 초기화되는 과정을 분석하였습니다. </p>
+<ul>
+<li>Stage 1 Boot ROM 코드: XIP 실행 및 최소 하드웨어 설정</li>
+<li>Stage 1.5 부트로더: Gzip 압축 해제 및 캐시 동기화</li>
+<li>Stage 2 부트로더: 하드웨어 초기화 및 펌웨어 검증</li>
+<li>Kernel Decompressor: LZMA 압축 해제 후 캐시되지 않은 메모리로 이동 (KSEG1)</li>
+<li>eCos 커널: HAL 초기화, 생성자 호출 및 스케줄러 시작</li>
+</ul>
+<p>이러한 분석을 통해 임베디드 시스템에서는 부트로더와 RTOS 초기화 과정이 밀접하게 연관되어 있으며, 단계적으로 압축을 해제하여 실행하는 방식을 통해 플래시 메모리 사용량을 줄이는 기법이 적용되어 있음을 확인할 수 있었습니다.</p>
+
+      </div>
+
+      <div class="post-nav">
+        
+          <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="post-nav-item post-nav-prev">
+            <div class="post-nav-dir">&larr; Older</div>
+            <div class="post-nav-title">Tearing Down eCos RTOS Embedded System</div>
+          </a>
+        
+        
+          <a href="/2026/06/14/CVE-2026-6250/" class="post-nav-item post-nav-next">
+            <div class="post-nav-dir">Newer &rarr;</div>
+            <div class="post-nav-title">CVE-2026-6250</div>
+          </a>
+        
+      </div>
+    </article>
+  </div>
+</main>
+
+  <footer class="site-footer">
+  <div class="footer-inner">
+    <span class="footer-left">&copy; 2026 s14ke</span>
+  </div>
+</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.umd.min.js" defer></script>
+  <script src="/js/main.js" defer></script>
+</body>
+</html>
