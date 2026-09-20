@@ -6,6 +6,7 @@
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
+    initTheme();
     var A = window.anime;
     var html = document.documentElement;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -42,6 +43,40 @@
   /* ------------------------------------------------------------------ helpers */
 
   function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function initTheme() {
+    var button = document.getElementById('theme-toggle');
+    var root = document.documentElement;
+    var themeColor = document.querySelector('meta[name="theme-color"]');
+    if (!button) return;
+
+    function apply(theme) {
+      var dark = theme === 'dark';
+      var label = 'Switch to ' + (dark ? 'light' : 'dark') + ' mode';
+      root.setAttribute('data-theme', theme);
+      button.setAttribute('aria-label', label);
+      button.setAttribute('aria-pressed', String(dark));
+      button.title = label;
+      if (themeColor) themeColor.setAttribute('content', dark ? '#0b0b0d' : '#ffffff');
+    }
+
+    apply(root.getAttribute('data-theme') || 'light');
+    button.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('s14ke-theme', next); } catch (e) { /* storage can be disabled */ }
+      apply(next);
+    });
+
+    if (window.matchMedia) {
+      var preference = window.matchMedia('(prefers-color-scheme: dark)');
+      var onPreferenceChange = function (event) {
+        try { if (localStorage.getItem('s14ke-theme')) return; } catch (e) { /* use system setting */ }
+        apply(event.matches ? 'dark' : 'light');
+      };
+      if (preference.addEventListener) preference.addEventListener('change', onPreferenceChange);
+      else if (preference.addListener) preference.addListener(onPreferenceChange);
+    }
+  }
 
   function inViewport(el) {
     var r = el.getBoundingClientRect();
