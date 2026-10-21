@@ -20,16 +20,14 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css">
   <link rel="stylesheet" href="/css/main.css">
   <script>(function(d){d.classList.add('js');if(!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('anim');setTimeout(function(){d.classList.remove('anim');},6000);}})(document.documentElement);</script>
-<meta name="generator" content="Hexo 8.1.1"></head>
+<meta name="generator" content="Hexo 8.1.1"><link rel="alternate" href="/atom.xml" title="s14ke" type="application/atom+xml">
+</head>
 
 <body data-page="home">
   <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
   <header class="site-header">
   <div class="header-inner">
-    <a href="/" class="logo" aria-label="s14ke home">
-      <span class="logo-icon" aria-hidden="true"></span>
-      <span>s14ke</span>
-    </a>
+    <a href="/" class="logo" aria-label="s14ke home">s14ke</a>
     <div class="header-actions">
       <nav class="site-nav" aria-label="Primary">
         <a href="/" class="nav-link">Home</a>
@@ -57,8 +55,9 @@
       <p class="hero-bio" data-reveal="bio">Offensive security research on embedded systems and beyond.</p>
     </div>
     <dl class="hero-facts" data-reveal="facts">
-      <div class="fact"><dt>Posts</dt><dd>2</dd></div>
-      <div class="fact"><dt>Latest</dt><dd>2026-06-16</dd></div>
+      <div class="fact"><dt>CVE assigned</dt><dd>1</dd></div>
+      <div class="fact"><dt>Targets</dt><dd>IP cam, router</dd></div>
+      <div class="fact"><dt>Latest</dt><dd>2026-06-14</dd></div>
       <div class="fact"><dt>Languages</dt><dd>EN / KR</dd></div>
     </dl>
   </section>
@@ -74,7 +73,7 @@
   </div>
   <div class="entry-body">
     <a href="/2026/06/14/CVE-2026-6250/" class="entry-title">CVE-2026-6250</a>
-    <p class="entry-excerpt">ONVIF (Open Network Video Interface Forum) is a standard protocol used for IP camera device management. The Tapo C110 v2 provides the ONVIF service on TCP port 2020 and supports standard WS-Security-based user management functions such as GetUsers,…</p>
+    <p class="entry-excerpt">Technical analysis of CVE-2026-6250, an authenticated format string vulnerability in the Tapo C110 v2 ONVIF service.</p>
     <div class="entry-meta">
       <a href="/tags/IoT/" class="entry-tag">IoT</a><a href="/tags/0-Day/" class="entry-tag">0-Day</a>
       <span class="entry-read">10 min</span>
@@ -91,7 +90,7 @@
   </div>
   <div class="entry-body">
     <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="entry-title">Tearing Down eCos RTOS Embedded System</a>
-    <p class="entry-excerpt">Tearing down an eCos-based embedded system from flash dump to boot sequence. The eCos-based router target had a SoC (System-on-Chip), SPI SOP-8 NOR flash chip, UART…</p>
+    <p class="entry-excerpt">A hands-on teardown of an eCos-based embedded system, from flash dumping and bootloaders to RTOS internals.</p>
     <div class="entry-meta">
       <a href="/tags/IoT/" class="entry-tag">IoT</a><a href="/tags/RTOS/" class="entry-tag">RTOS</a>
       <span class="entry-read">14 min</span>
@@ -106,6 +105,12 @@
   <footer class="site-footer">
   <div class="footer-inner">
     <span class="footer-left">&copy; 2026 s14ke</span>
+    <nav class="footer-links" aria-label="Elsewhere">
+      <a href="https://x.com/s14ke_" rel="me noopener" target="_blank">X</a>
+      <a href="https://github.com/s14ke" rel="me noopener" target="_blank">GitHub</a>
+      <a href="mailto:leejuh1621@gmail.com">Email</a>
+      <a class="is-feed" href="/atom.xml">RSS</a>
+    </nav>
   </div>
 </footer>
 

@@ -28,8 +28,6 @@
 
     if (!motion) return;
 
-    initLogoScramble(A);
-    initTagBars(A);
     if (page === 'notfound') init404(A);
 
     /* pin the initial hidden state inline so it no longer depends on the .anim class */
@@ -84,13 +82,12 @@
   }
 
   /* Split the text nodes of a heading into per-character spans.
-     Words are wrapped in inline-block spans so line wrapping still happens at word boundaries.
-     Child elements (e.g. the KR badge) are left intact. */
+     Words are wrapped in inline-block spans so line wrapping still happens at word boundaries. */
   function splitChars(el) {
     var chars = [];
     var nodes = Array.prototype.slice.call(el.childNodes);
     nodes.forEach(function (node) {
-      if (node.nodeType === 1 && !node.classList.contains('lang-badge')) { chars.push.apply(chars, splitChars(node)); return; }
+      if (node.nodeType === 1) { chars.push.apply(chars, splitChars(node)); return; }
       if (node.nodeType !== 3) return;
       var frag = document.createDocumentFragment();
       var parts = node.textContent.split(/(\s+)/);
@@ -114,26 +111,6 @@
     return chars;
   }
 
-  /* Typewriter: reveal a line left-to-right, quantised to whole characters, by clipping. */
-  function typeLine(A, tl, el, at) {
-    var len = Math.max(1, el.textContent.length);
-    var duration = Math.min(600, 80 + len * 6);
-    var proxy = { p: 0 };
-    el.style.clipPath = 'inset(0 100% 0 0)';
-    el.style.opacity = '1';
-    tl.add(proxy, {
-      p: 1,
-      duration: duration,
-      ease: 'linear',
-      onUpdate: function () {
-        var s = Math.floor(proxy.p * len) / len;
-        el.style.clipPath = 'inset(0 ' + ((1 - s) * 100).toFixed(2) + '% 0 0)';
-      },
-      onComplete: function () { el.style.clipPath = ''; }
-    }, at);
-    return at + duration + 70;
-  }
-
   /* ------------------------------------------------------------------ intro timeline */
 
   function initIntro(A, page) {
@@ -142,15 +119,11 @@
     var t = 60;
     var lazy = [];
 
-    /* 2. command line (archive / tags / about / 404) */
-    var cmd = document.querySelector('.list-cmd[data-reveal], .nf-cmd[data-reveal]');
-    if (cmd) { t = typeLine(A, tl, cmd, t); }
-
-    /* 3. back link on articles */
+    /* 1. back link on articles */
     var back = document.querySelector('.back-link[data-reveal]');
     if (back) { tl.add(back, { opacity: [0, 1], x: [-8, 0], duration: 380 }, t); t += 60; }
 
-    /* 4. title characters */
+    /* 2. title characters */
     var title = document.querySelector('[data-split="title"]');
     if (title) {
       var chars = splitChars(title);
@@ -166,8 +139,8 @@
       }
     }
 
-    /* 5. remaining tagged elements: in view -> timeline, below the fold -> lazy */
-    var rest = $all('[data-reveal]').filter(function (el) { return el !== cmd && el !== back; });
+    /* 3. remaining tagged elements: in view -> timeline, below the fold -> lazy */
+    var rest = $all('[data-reveal]').filter(function (el) { return el !== back; });
     var visible = [], entries = [];
     rest.forEach(function (el) {
       if (!inViewport(el)) { lazy.push(el); return; }
@@ -176,7 +149,7 @@
     if (visible.length) { tl.add(visible, { opacity: [0, 1], y: [8, 0], delay: stagger(70) }, t); t += 120; }
     if (entries.length) { tl.add(entries, { opacity: [0, 1], x: [-12, 0], duration: 560, delay: stagger(80) }, t); t += 120; }
 
-    /* 6. article body blocks: first screen staggers in, rest reveal on scroll */
+    /* 4. article body blocks: first screen staggers in, rest reveal on scroll */
     if (page === 'post' || page === 'about' || page === 'page') {
       var blocks = $all('#post-content > *');
       var firstScreen = [];
@@ -191,24 +164,6 @@
         A.utils.set(tocItems, { opacity: 0 });
         tl.add(tocItems, { opacity: [0, 1], x: [-6, 0], duration: 380, delay: stagger(30) }, t);
       }
-    }
-
-    /* 7. tag rows on the tags page */
-    if (page === 'tags') {
-      var bars = $all('.tag-bar-fill');
-      if (bars.length) {
-        bars.forEach(function (bar, i) {
-          tl.add(bar, { scaleX: [0, 1], duration: 700, ease: 'outExpo' }, t + 200 + i * 80);
-        });
-      }
-      $all('.tag-count[data-count]').forEach(function (el, i) {
-        var target = parseInt(el.getAttribute('data-count'), 10) || 0;
-        var proxy = { v: 0 };
-        tl.add(proxy, {
-          v: target, duration: 700, ease: 'outExpo',
-          onUpdate: function () { el.textContent = Math.round(proxy.v); }
-        }, t + 200 + i * 80);
-      });
     }
 
     var pin = lazy.filter(function (el) { return !el._chars; });
@@ -244,71 +199,6 @@
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
     lazy.forEach(function (el) { io.observe(el); });
-  }
-
-  /* ------------------------------------------------------------------ logo scramble */
-
-  function initLogoScramble(A) {
-    var logo = document.querySelector('.logo');
-    var el = logo && logo.querySelector('.logo-user');
-    if (!el) return;
-
-    var CHARS = '0123456789abcdef<>[]{}/\\|+-=~*#';
-    var finalText = el.textContent;
-    var n = finalText.length;
-    var lockStart = 160, lockStep = 80, duration = lockStart + lockStep * n + 60;
-    var anim = null;
-
-    function reset() {
-      if (anim) { anim.pause(); anim = null; }
-      el.textContent = finalText;
-      logo.classList.remove('is-scrambling');
-      logo.classList.remove('is-decoded');
-    }
-
-    logo.addEventListener('mouseenter', function () {
-      reset();
-      var proxy = { t: 0 };
-      logo.classList.add('is-scrambling');
-      anim = A.animate(proxy, {
-        t: 1,
-        duration: duration,
-        ease: 'linear',
-        onUpdate: function () {
-          var elapsed = proxy.t * duration;
-          var frame = Math.floor(elapsed / 42);
-          var out = '';
-          for (var i = 0; i < n; i++) {
-            var locked = elapsed >= lockStart + i * lockStep;
-            out += locked ? finalText[i] : CHARS[(frame * 7 + i * 5) % CHARS.length];
-          }
-          el.textContent = out;
-        },
-        onComplete: function () {
-          el.textContent = finalText;
-          logo.classList.remove('is-scrambling');
-          logo.classList.add('is-decoded');
-        }
-      });
-    });
-
-    logo.addEventListener('mouseleave', reset);
-    document.addEventListener('visibilitychange', function () { if (document.hidden) reset(); });
-  }
-
-  /* ------------------------------------------------------------------ tag bars hover */
-
-  function initTagBars(A) {
-    $all('.tag-row').forEach(function (row) {
-      var addr = row.querySelector('.entry-addr');
-      if (!addr) return;
-      row.addEventListener('mouseenter', function () {
-        A.animate(addr, { x: [0, 4], duration: 220, ease: 'outQuad' });
-      });
-      row.addEventListener('mouseleave', function () {
-        A.animate(addr, { x: 0, duration: 220, ease: 'outQuad' });
-      });
-    });
   }
 
   /* ------------------------------------------------------------------ 404 glitch */
@@ -367,6 +257,17 @@
 
   /* ------------------------------------------------------------------ code blocks */
 
+  /* highlight.js writes the language as a second class: <code class="hljs c"> */
+  function codeLanguage(code) {
+    if (!code) return '';
+    var name = '';
+    code.className.split(/\s+/).forEach(function (cls) {
+      if (!cls || cls === 'hljs' || cls === 'plaintext' || cls === 'undefined') return;
+      if (!name) name = cls.replace(/^(lang|language)-/, '');
+    });
+    return name;
+  }
+
   function initCodeBlocks(A, motion) {
     $all('.post-content pre').forEach(function (pre) {
       if (pre.closest('.code-block')) return;
@@ -374,32 +275,55 @@
 
       var wrapper = document.createElement('div');
       wrapper.className = 'code-block';
+
+      var head = document.createElement('div');
+      head.className = 'code-head';
+      var lang = document.createElement('span');
+      lang.className = 'code-lang';
+      lang.textContent = codeLanguage(code);
+      head.appendChild(lang);
+
       var copyBtn = document.createElement('button');
       copyBtn.className = 'code-copy';
       copyBtn.type = 'button';
       copyBtn.textContent = 'copy';
       copyBtn.setAttribute('aria-label', 'Copy code');
+      head.appendChild(copyBtn);
+
+      function flash(label, copied) {
+        copyBtn.textContent = label;
+        copyBtn.classList.toggle('is-copied', !!copied);
+        if (copied && motion) {
+          A.animate(copyBtn, { scale: [1, 1.12], duration: 120, ease: 'outQuad',
+            onComplete: function () { A.animate(copyBtn, { scale: 1, duration: 200, ease: 'outQuad' }); } });
+        }
+        setTimeout(function () {
+          copyBtn.textContent = 'copy';
+          copyBtn.classList.remove('is-copied');
+        }, 1400);
+      }
+
+      /* select the block as a fallback where the clipboard API is unavailable or refused */
+      function selectBlock() {
+        try {
+          var range = document.createRange();
+          range.selectNodeContents(code || pre);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          flash('selected');
+        } catch (e) { /* nothing more to offer */ }
+      }
 
       copyBtn.addEventListener('click', function () {
         var text = code ? code.innerText : pre.innerText;
-        if (!navigator.clipboard) return;
-        navigator.clipboard.writeText(text).then(function () {
-          copyBtn.textContent = 'copied';
-          copyBtn.classList.add('is-copied');
-          if (motion) {
-            A.animate(copyBtn, { scale: [1, 1.12], duration: 120, ease: 'outQuad',
-              onComplete: function () { A.animate(copyBtn, { scale: 1, duration: 200, ease: 'outQuad' }); } });
-          }
-          setTimeout(function () {
-            copyBtn.textContent = 'copy';
-            copyBtn.classList.remove('is-copied');
-          }, 1400);
-        });
+        if (!navigator.clipboard || !navigator.clipboard.writeText) { selectBlock(); return; }
+        navigator.clipboard.writeText(text).then(function () { flash('copied', true); }, selectBlock);
       });
 
       pre.parentNode.insertBefore(wrapper, pre);
+      wrapper.appendChild(head);
       wrapper.appendChild(pre);
-      wrapper.appendChild(copyBtn);
     });
   }
 

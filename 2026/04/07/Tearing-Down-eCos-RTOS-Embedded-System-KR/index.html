@@ -20,16 +20,14 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css">
   <link rel="stylesheet" href="/css/main.css">
   <script>(function(d){d.classList.add('js');if(!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('anim');setTimeout(function(){d.classList.remove('anim');},6000);}})(document.documentElement);</script>
-<meta name="generator" content="Hexo 8.1.1"></head>
+<meta name="generator" content="Hexo 8.1.1"><link rel="alternate" href="/atom.xml" title="s14ke" type="application/atom+xml">
+</head>
 
 <body data-page="post">
   <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
   <header class="site-header">
   <div class="header-inner">
-    <a href="/" class="logo" aria-label="s14ke home">
-      <span class="logo-icon" aria-hidden="true"></span>
-      <span>s14ke</span>
-    </a>
+    <a href="/" class="logo" aria-label="s14ke home">s14ke</a>
     <div class="header-actions">
       <nav class="site-nav" aria-label="Primary">
         <a href="/" class="nav-link">Home</a>
@@ -50,9 +48,10 @@
 <main class="main-container">
   <div class="post-layout">
 
+    
     <aside class="toc-sidebar" id="toc-sidebar">
       <div class="toc-label">Contents</div>
-      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#TL-DR"><span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Flash-Dump"><span class="toc-text">Flash Dump</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#SPI"><span class="toc-text">SPI</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Clock-Signal"><span class="toc-text">Clock Signal</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SPI-Communication-Diagram"><span class="toc-text">SPI Communication Diagram</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Sequence-Overview"><span class="toc-text">Boot Sequence Overview</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Stage-1"><span class="toc-text">Boot Stage 1</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Stage-1-5"><span class="toc-text">Boot Stage 1.5</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Boot-Stage-2"><span class="toc-text">Boot Stage 2</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Stage-2-Bootloader-Firmware-Integrity-Verification"><span class="toc-text">Stage 2 Bootloader: Firmware Integrity Verification</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kernel-Decompressor"><span class="toc-text">Kernel Decompressor</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Why-KSEG1-for-Kernel-Decompression-Output"><span class="toc-text">Why KSEG1 for Kernel Decompression Output?</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#eCos-Firmware"><span class="toc-text">eCos Firmware</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#C-Static-Constructors-Thread-Registration"><span class="toc-text">C++ Static Constructors: Thread Registration</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><span class="toc-text">Scheduler Dispatch: Indirect Call to Application Thread</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Conclusion"><span class="toc-text">Conclusion</span></a></li></ol>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#TL-DR"><span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Flash-Dump"><span class="toc-text">Flash Dump</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI"><span class="toc-text">SPI</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Clock-Signal"><span class="toc-text">Clock Signal</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI-Communication-Diagram"><span class="toc-text">SPI Communication Diagram</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Sequence-Overview"><span class="toc-text">Boot Sequence Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1"><span class="toc-text">Boot Stage 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1-5"><span class="toc-text">Boot Stage 1.5</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-2"><span class="toc-text">Boot Stage 2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Stage-2-Bootloader-Firmware-Integrity-Verification"><span class="toc-text">Stage 2 Bootloader: Firmware Integrity Verification</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kernel-Decompressor"><span class="toc-text">Kernel Decompressor</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-KSEG1-for-Kernel-Decompression-Output"><span class="toc-text">Why KSEG1 for Kernel Decompression Output?</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#eCos-Firmware"><span class="toc-text">eCos Firmware</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-Static-Constructors-Thread-Registration"><span class="toc-text">C++ Static Constructors: Thread Registration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><span class="toc-text">Scheduler Dispatch: Indirect Call to Application Thread</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Conclusion"><span class="toc-text">Conclusion</span></a></li></ol>
     </aside>
 
     <article class="post-article">
@@ -69,9 +68,16 @@
         <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="meta-item meta-alt">Read in English</a>
       </div>
 
+      
+        <details class="toc-mobile">
+          <summary>Contents</summary>
+          <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#TL-DR"><span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Flash-Dump"><span class="toc-text">Flash Dump</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI"><span class="toc-text">SPI</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Clock-Signal"><span class="toc-text">Clock Signal</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI-Communication-Diagram"><span class="toc-text">SPI Communication Diagram</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Sequence-Overview"><span class="toc-text">Boot Sequence Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1"><span class="toc-text">Boot Stage 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1-5"><span class="toc-text">Boot Stage 1.5</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-2"><span class="toc-text">Boot Stage 2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Stage-2-Bootloader-Firmware-Integrity-Verification"><span class="toc-text">Stage 2 Bootloader: Firmware Integrity Verification</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kernel-Decompressor"><span class="toc-text">Kernel Decompressor</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-KSEG1-for-Kernel-Decompression-Output"><span class="toc-text">Why KSEG1 for Kernel Decompression Output?</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#eCos-Firmware"><span class="toc-text">eCos Firmware</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-Static-Constructors-Thread-Registration"><span class="toc-text">C++ Static Constructors: Thread Registration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><span class="toc-text">Scheduler Dispatch: Indirect Call to Application Thread</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Conclusion"><span class="toc-text">Conclusion</span></a></li></ol>
+        </details>
+      
+
       <div class="post-content" id="post-content">
-        <h1 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h1><p>eCos 기반 임베디드 시스템을 플래시 덤프부터 부팅 시퀀스까지의 분석 과정을 설명합니다.</p>
-<h1 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h1><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="PCB"><br>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
+        <h2 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h2><p>eCos 기반 임베디드 시스템을 플래시 덤프부터 부팅 시퀀스까지의 분석 과정을 설명합니다.</p>
+<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="PCB"><br>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
 <p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="FlashROM"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="FlashROM-off"></p>
 <p>NOR 플래시는 <a target="_blank" rel="noopener" href="https://www.e-interlink.com.tw/userUpload/files/BH25D16A_v1_0.pdf">BoHong BH25D16A</a> 칩이었으며 핀 구성도는 아래와 같습니다:</p>
 <p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="FlashROM-pinmap"></p>
@@ -86,7 +92,7 @@
 <li>8: VCC (공급 전압)</li>
 </ul>
 <p>BH25D16A는 SPI 버스의 전용 (공유되지 않는) 접근이 필요한 환경을 위해 설계되었으므로 다른 장치와 버스를 공유하기 위한 &#x2F;HOLD 핀이 없습니다. 또한 플래시 메모리 읽기만 수행하기 때문에 &#x2F;WP 핀은 연결하지 않았습니다 (읽기 전용 작업에는 필요하지 않음).</p>
-<h2 id="SPI"><a href="#SPI" class="headerlink" title="SPI"></a>SPI</h2><pre><code class="hljs plaintext">┌──────────┐                     ┌──────────┐
+<h3 id="SPI"><a href="#SPI" class="headerlink" title="SPI"></a>SPI</h3><pre><code class="hljs plaintext">┌──────────┐                     ┌──────────┐
 │          │──── MOSI (SDI) ────&gt;│          │
 │          │&lt;─── MISO (SDO) ─────│          │
 │  Master  │──── SCLK (CLK) ────&gt;│  Slave   │
@@ -122,12 +128,12 @@
 <td align="center">LOW로 설정 시 슬레이브 선택</td>
 </tr>
 </tbody></table>
-<h2 id="Clock-Signal"><a href="#Clock-Signal" class="headerlink" title="Clock Signal"></a>Clock Signal</h2><pre><code class="hljs plaintext">SCLK  __/‾\_/‾\_/‾\_/‾\__
+<h3 id="Clock-Signal"><a href="#Clock-Signal" class="headerlink" title="Clock Signal"></a>Clock Signal</h3><pre><code class="hljs plaintext">SCLK  __/‾\_/‾\_/‾\_/‾\__
 MOSI  -[1]-[0]-[1]-[1]---
         ↑   ↑   ↑   ↑
       클럭 엣지마다 1비트씩 전송함</code></pre>
 <p>클록 신호는 장치들에게 언제 데이터를 읽거나 써야 하는지를 알려주는 타이밍 신호 역할을 수행하여 여러 장치가 통신하는 동안 동기화 상태를 유지하도록 합니다. 마스터는 클럭을 정의하고, 슬레이브는 클럭 엣지 (SPI 모드 0&#x2F;3의 상승 엣지) 에서 데이터를 샘플링합니다.</p>
-<h2 id="SPI-Communication-Diagram"><a href="#SPI-Communication-Diagram" class="headerlink" title="SPI Communication Diagram"></a>SPI Communication Diagram</h2><pre><code class="hljs plaintext">CS   ‾‾‾‾\___________________________________/‾‾‾‾
+<h3 id="SPI-Communication-Diagram"><a href="#SPI-Communication-Diagram" class="headerlink" title="SPI Communication Diagram"></a>SPI Communication Diagram</h3><pre><code class="hljs plaintext">CS   ‾‾‾‾\___________________________________/‾‾‾‾
         ↑ CS LOW (통신 시작)                   ↑ CS HIGH (통신 종료)
 
 SCLK _______/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_/‾\_______
@@ -145,12 +151,12 @@ MISO ────[MSB]───────────────────�
 <p>그래서 EMI (Electromagnetic Interference) 차폐막을 제거하고 SoC 모델을 확인했습니다. 해당 SoC는 MIPS 아키텍처 기반의 RTL8197F 제품군에 속합니다.</p>
 <p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="EMI-Shield open"></p>
 <p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="SoC"></p>
-<h1 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h1><p><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="boot-sequence-diagram"></p>
-<h1 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h1><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="ROM memory map"><br><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
+<h2 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h2><p><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="boot-sequence-diagram"></p>
+<h2 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h2><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="ROM memory map"><br><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
 <p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-vector-table.png" alt="Stage 1 BL vector table"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-reset_entry.png" alt="Stage 1 BL reset_entry"></p>
 <p>Stage 1 Boot ROM 코드는 부팅 로그를 출력하고, D-Cache (데이터 캐시) 와 I-Cache (명령어 캐시) 를 무효화하고, Stage 1.5 부트로더 (0xB0007000) 를 DRAM (0x80100000) 에 로드한 후 해당 위치로 점프합니다.<br>그래서 다음과 같이 새로운 DRAM 세그먼트를 생성했습니다:</p>
 <p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1.5-BL-segment.png" alt="Stage 1.5 BL segment"></p>
-<h1 id="Boot-Stage-1-5"><a href="#Boot-Stage-1-5" class="headerlink" title="Boot Stage 1.5"></a>Boot Stage 1.5</h1><pre><code class="hljs c">DRAM:<span class="hljs-number">80100000</span>     <span class="hljs-meta"># int dram_entry()</span>
+<h2 id="Boot-Stage-1-5"><a href="#Boot-Stage-1-5" class="headerlink" title="Boot Stage 1.5"></a>Boot Stage 1.5</h2><pre><code class="hljs c">DRAM:<span class="hljs-number">80100000</span>     <span class="hljs-meta"># int dram_entry()</span>
 DRAM:<span class="hljs-number">80100000</span>    dram_entry:
 DRAM:<span class="hljs-number">80100000</span>                    li      $t0, unk_8010B4C0
 DRAM:<span class="hljs-number">80100008</span>                    nop
@@ -182,7 +188,7 @@ DRAM:<span class="hljs-number">8010002</span>C     # End of function dram_entry
   <span class="hljs-keyword">return</span> MEMORY[<span class="hljs-number">0x80000000</span>](v0, v1, v2, v3);    <span class="hljs-comment">// jalr 0x80000000 -&gt; Stage 2 Bootloader(&quot;RTL8197F-VG boot version:614&quot;)</span>
 &#125;</code></pre>
 <p>Stage 1.5 부트로더는 gzip으로 압축된 Stage 2 부트로더 (0x80101D60) 를 KSEG0 (0x80000000) 으로 압축 해제하고, 명령어 캐시와 데이터 캐시를 동기화 (D-Cache 쓰기 + I-Cache 무효화) 한 후 실행합니다. </p>
-<h1 id="Boot-Stage-2"><a href="#Boot-Stage-2" class="headerlink" title="Boot Stage 2"></a>Boot Stage 2</h1><pre><code class="hljs c">DRAM:<span class="hljs-number">80000000</span>     # Segment type: Pure code
+<h2 id="Boot-Stage-2"><a href="#Boot-Stage-2" class="headerlink" title="Boot Stage 2"></a>Boot Stage 2</h2><pre><code class="hljs c">DRAM:<span class="hljs-number">80000000</span>     # Segment type: Pure code
 DRAM:<span class="hljs-number">80000000</span>                    .text # DRAM     <span class="hljs-comment">// vector table</span>
 DRAM:<span class="hljs-number">80000000</span>                    b       loc_8000040C     # DATA XREF: sub_80003130+<span class="hljs-number">70</span>↓o
 DRAM:<span class="hljs-number">80000004</span>                    nop
@@ -286,7 +292,7 @@ DRAM:<span class="hljs-number">8000047</span>C                    nop
   <span class="hljs-keyword">return</span> load_firmware_n_jump(MEMORY[<span class="hljs-number">0x80018BC4</span>], a3);
 &#125;</code></pre>
 
-<h2 id="Stage-2-Bootloader-Firmware-Integrity-Verification"><a href="#Stage-2-Bootloader-Firmware-Integrity-Verification" class="headerlink" title="Stage 2 Bootloader: Firmware Integrity Verification"></a>Stage 2 Bootloader: Firmware Integrity Verification</h2><pre><code class="hljs c"><span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">check_firmware_integrity</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, <span class="hljs-type">int</span> a2)</span>
+<h3 id="Stage-2-Bootloader-Firmware-Integrity-Verification"><a href="#Stage-2-Bootloader-Firmware-Integrity-Verification" class="headerlink" title="Stage 2 Bootloader: Firmware Integrity Verification"></a>Stage 2 Bootloader: Firmware Integrity Verification</h3><pre><code class="hljs c"><span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">check_firmware_integrity</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, <span class="hljs-type">int</span> a2)</span>
 &#123;
   <span class="hljs-type">int</span> result; <span class="hljs-comment">// $v0</span>
   _BYTE v3[<span class="hljs-number">8</span>]; <span class="hljs-comment">// [sp+18h] [-14h] BYREF</span>
@@ -384,7 +390,7 @@ port link ...
 Jump to image start:0x80700000...</code></pre>
 
 <p>무결성 검증이 완료되면, Kernel Decompressor를 KSEG0 (0x80700000) 에 로드하고 실행합니다.</p>
-<h1 id="Kernel-Decompressor"><a href="#Kernel-Decompressor" class="headerlink" title="Kernel Decompressor"></a>Kernel Decompressor</h1><pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
+<h2 id="Kernel-Decompressor"><a href="#Kernel-Decompressor" class="headerlink" title="Kernel Decompressor"></a>Kernel Decompressor</h2><pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
 
 DRAM:<span class="hljs-number">80700000</span>     # Segment type: Pure code
 DRAM:<span class="hljs-number">80700000</span>                    .text # DRAM
@@ -504,7 +510,7 @@ decompress_kernal_n_jump + 0x38  ◄──────┘  (0x80700220)
   jr 0xA0000600 → eCos kernel entry point</code></pre>
 
 <p>LZMA (Lempel-Ziv-Markov chain Algorithm) Decompressor는 커널 코드를 KSEG1 (0xA0000000) 으로 압축 해제를 수행합니다.</p>
-<h2 id="Why-KSEG1-for-Kernel-Decompression-Output"><a href="#Why-KSEG1-for-Kernel-Decompression-Output" class="headerlink" title="Why KSEG1 for Kernel Decompression Output?"></a>Why KSEG1 for Kernel Decompression Output?</h2><p>압축 해제된 커널은 0xA0000000 (KSEG1, 캐시되지 않음) 에 기록되며, 0x80000000 (KSEG0, 캐시됨) 에는 기록되지 않습니다. 두 주소 모두 동일한 물리적 DRAM 주소인 0x00000000에 매핑됩니다:</p>
+<h3 id="Why-KSEG1-for-Kernel-Decompression-Output"><a href="#Why-KSEG1-for-Kernel-Decompression-Output" class="headerlink" title="Why KSEG1 for Kernel Decompression Output?"></a>Why KSEG1 for Kernel Decompression Output?</h3><p>압축 해제된 커널은 0xA0000000 (KSEG1, 캐시되지 않음) 에 기록되며, 0x80000000 (KSEG0, 캐시됨) 에는 기록되지 않습니다. 두 주소 모두 동일한 물리적 DRAM 주소인 0x00000000에 매핑됩니다:</p>
 <pre><code class="hljs plaintext">MIPS Virtual Address    Cache Mode    Physical Address
 ────────────────────    ──────────    ────────────────
 0xA0000000 (KSEG1)       Uncached     0x00000000 (DRAM)
@@ -513,7 +519,7 @@ decompress_kernal_n_jump + 0x38  ◄──────┘  (0x80700220)
 <p>KSEG0 (0x80000000, 캐시됨) 에 데이터를 쓰면, 압축 해제된 데이터가 D-Cache에 저장되고, 최종적으로 DRAM에 다시 기록됩니다. 하지만 MIPS 아키텍처는 D-Cache와 I-Cache 간의 일관성을 유지하지 않기 때문에, I-Cache에는 여전히 오래된 명령어가 남아 있어 시스템 충돌이 발생할 수 있습니다.</p>
 <p>KSEG1 (0xA0000000, 캐시되지 않음) 에 기록함으로써, 압축 해제된 데이터는 캐시를 거치지 않고 DRAM으로 직접 전송됩니다. 이후 CPU가 0x80000600 (KSEG0) 으로 점프하면 I-Cache miss가 발생하고 DRAM에서 최신 명령어를 올바르게 가져옵니다.</p>
 <p>압축 해제가 완료되면, 부트로더는 제어권을 eCos 커널 진입점으로 넘기고 해당 진입점은 HAL을 초기화하고 스케줄러를 시작합니다.</p>
-<h1 id="eCos-Firmware"><a href="#eCos-Firmware" class="headerlink" title="eCos Firmware"></a>eCos Firmware</h1><p>이 시점에서 제어권이 부트로더에서 eCos 커널로 이전되며 이는 펌웨어 초기화에서 RTOS 실행으로의 전환을 의미합니다.</p>
+<h2 id="eCos-Firmware"><a href="#eCos-Firmware" class="headerlink" title="eCos Firmware"></a>eCos Firmware</h2><p>이 시점에서 제어권이 부트로더에서 eCos 커널로 이전되며 이는 펌웨어 초기화에서 RTOS 실행으로의 전환을 의미합니다.</p>
 <pre><code class="hljs c">DRAM:<span class="hljs-number">80000600</span>    eCos_exception_entry:
 DRAM:<span class="hljs-number">80000600</span>                    mfc0    $k0, Cause       # General Exception Vector: dispatch via table at <span class="hljs-number">0x80000400.</span> NOT the startup entry.
 DRAM:<span class="hljs-number">80000604</span>                    nop
@@ -526,7 +532,7 @@ DRAM:<span class="hljs-number">80000620</span>                    jr      $k1   
 DRAM:<span class="hljs-number">80000624</span>                    nop
 DRAM:<span class="hljs-number">80000624</span>     # End of function eCos_exception_entry</code></pre>
 <p>첫 Entry에서 제어는 0x80000D00 주소의 리셋 핸들러로 전달됩니다. 이때 예외 벡터 메커니즘은 Cause 레지스터를 사용하지만, 이 시점에는 벡터 테이블이 아직 초기화되지 않았으므로 실행은 리셋 진입점으로 직접 진행됩니다. </p>
-<h2 id="C-Static-Constructors-Thread-Registration"><a href="#C-Static-Constructors-Thread-Registration" class="headerlink" title="C++ Static Constructors: Thread Registration"></a>C++ Static Constructors: Thread Registration</h2><pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
+<h3 id="C-Static-Constructors-Thread-Registration"><a href="#C-Static-Constructors-Thread-Registration" class="headerlink" title="C++ Static Constructors: Thread Registration"></a>C++ Static Constructors: Thread Registration</h3><pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
 
 hal_reset_entry @ <span class="hljs-number">0x80000D00</span>:
 DRAM:<span class="hljs-number">80000</span>D0C  li      $k0, <span class="hljs-number">0x80215A44</span>
@@ -575,7 +581,7 @@ DRAM:80000DC0  j       cyg_scheduler_start</code></pre>
     cyg_thread_resume(thread_handle);
 &#125;</code></pre>
 
-<h2 id="Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><a href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread" class="headerlink" title="Scheduler Dispatch: Indirect Call to Application Thread"></a>Scheduler Dispatch: Indirect Call to Application Thread</h2><p>모든 생성자가 실행되고 스레드가 등록되면, <code>cyg_scheduler_start</code>는 스케줄링 루프에 진입합니다.</p>
+<h3 id="Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><a href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread" class="headerlink" title="Scheduler Dispatch: Indirect Call to Application Thread"></a>Scheduler Dispatch: Indirect Call to Application Thread</h3><p>모든 생성자가 실행되고 스레드가 등록되면, <code>cyg_scheduler_start</code>는 스케줄링 루프에 진입합니다.</p>
 <pre><code class="hljs c"><span class="hljs-comment">// Analyzed by Claude Code Opus 4.6</span>
 cyg_scheduler_start @ <span class="hljs-number">0x8021DA5C</span>:
 
@@ -586,7 +592,7 @@ DRAM:<span class="hljs-number">8021</span>DA7C  lw      $t8, <span class="hljs-n
 DRAM:<span class="hljs-number">8021</span>DA80  j       context_switch       ; <span class="hljs-keyword">switch</span> to thread context
 DRAM:<span class="hljs-number">8021</span>DA84  lw      $a0, <span class="hljs-number">0x00</span>($s0)       ; $a0 = thread-&gt;arg (delay slot)</code></pre>
 <p>eCos는 우선순위 기반 선점형 스케줄러를 사용하며 실행 가능한 스레드 중 가장 우선순위가 높은 스레드가 항상 선택되어 실행됩니다. 스케줄러는 실행 큐에서 스레드 구조체를 가져와 진입 함수 포인터 (오프셋 0x14) 를 추출한 후 컨텍스트 스위치를 수행하여 제어권을 넘깁니다.</p>
-<h1 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h1><p>본 분석에서는 eCos 기반 임베디드 시스템의 부팅 과정을 플래시 메모리 추출부터 RTOS 수준 실행까지 전체적으로 살펴보았습니다.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>본 분석에서는 eCos 기반 임베디드 시스템의 부팅 과정을 플래시 메모리 추출부터 RTOS 수준 실행까지 전체적으로 살펴보았습니다.</p>
 <p>시스템이 다음과 같이 여러 단계를 거쳐 부팅 및 초기화되는 과정을 분석하였습니다. </p>
 <ul>
 <li>Stage 1 Boot ROM 코드: XIP 실행 및 최소 하드웨어 설정</li>
@@ -620,6 +626,12 @@ DRAM:<span class="hljs-number">8021</span>DA84  lw      $a0, <span class="hljs-n
   <footer class="site-footer">
   <div class="footer-inner">
     <span class="footer-left">&copy; 2026 s14ke</span>
+    <nav class="footer-links" aria-label="Elsewhere">
+      <a href="https://x.com/s14ke_" rel="me noopener" target="_blank">X</a>
+      <a href="https://github.com/s14ke" rel="me noopener" target="_blank">GitHub</a>
+      <a href="mailto:leejuh1621@gmail.com">Email</a>
+      <a class="is-feed" href="/atom.xml">RSS</a>
+    </nav>
   </div>
 </footer>
 
