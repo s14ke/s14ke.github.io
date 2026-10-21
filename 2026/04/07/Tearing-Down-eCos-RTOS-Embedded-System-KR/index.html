@@ -68,7 +68,7 @@
         
           <span class="meta-item meta-tags"><a href="/tags/IoT/" class="meta-tag">IoT</a><a href="/tags/RTOS/" class="meta-tag">RTOS</a></span>
         
-        <span class="meta-item">13 min read</span>
+        <span class="meta-item">14 min read</span>
         <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="meta-item meta-alt" hreflang="en">Read in English</a>
       </div>
 
@@ -81,10 +81,12 @@
 
       <div class="post-content" id="post-content">
         <h2 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h2><p>eCos 기반 임베디드 시스템을 플래시 덤프부터 부팅 시퀀스까지의 분석 과정을 설명합니다.</p>
-<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><p><img width="2712" height="2131" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="PCB"><br>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
-<p><img width="2673" height="2673" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="FlashROM"><br><img width="2930" height="2930" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="FlashROM-off"></p>
+<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><figure><img width="2712" height="2131" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="UART 헤더, SPI NOR 플래시, SoC, WLAN 칩이 표시된 라우터 메인보드"><figcaption><span class="fig-num">Figure 1.</span> 타겟 메인보드의 UART 헤더, SPI NOR 플래시, SoC, WLAN 칩</figcaption></figure>
+<p>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
+<figure><img width="2673" height="2673" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="보드에 실장된 SOP-8 NOR 플래시와 패키지 각인 표시"><figcaption><span class="fig-num">Figure 2.</span> UART 헤더 바로 옆 NOR 플래시, 각인은 H25S16 &#x2F; BG 25JD &#x2F; AP4K044</figcaption></figure>
+<figure><img width="2930" height="2930" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="핀셋으로 칩오프한 SOP-8 플래시를 패드에서 들어올리는 모습"><figcaption><span class="fig-num">Figure 3.</span> 패드에서 칩오프한 NOR 플래시</figcaption></figure>
 <p>NOR 플래시는 <a target="_blank" rel="noopener" href="https://www.e-interlink.com.tw/userUpload/files/BH25D16A_v1_0.pdf">BoHong BH25D16A</a> 칩이었으며 핀 구성도는 아래와 같습니다:</p>
-<p><img width="718" height="578" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="FlashROM-pinmap"></p>
+<figure><img width="718" height="578" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="BH25D16A SOP-8 상면 핀 구성도: &#x2F;CS, SO, &#x2F;WP, VSS, SI, SCLK, NC, VCC"><figcaption><span class="fig-num">Figure 4.</span> &#x2F;HOLD 핀이 빠진 BH25D16A 핀 구성도(상면)</figcaption></figure>
 <ul>
 <li>1: &#x2F;CS (칩 선택)</li>
 <li>2: DO (직렬 데이터 출력)</li>
@@ -149,17 +151,22 @@ MISO ────[MSB]───────────────────�
          ↑ 전이중</code></pre>
 
 <p>BH25D16A의 최대 클럭 주파수는 일반 읽기 시 55MHz, 고속&#x2F;듀얼 읽기 시 108MHz입니다. 저는 CH341A 프로그래머를 사용하여 NOR 플래시와 SPI 통신했습니다. <a target="_blank" rel="noopener" href="https://flashrom.org/">flashrom</a>의 spispeed는 2MHz로 고정이며, 이는 NOR 플래시의 최대 클럭 주파수 범위 내에 있으므로 별도의 속도 조정 없이 플래시 메모리를 읽을 수 있었습니다.</p>
-<p><img width="2391" height="1748" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.jpeg" alt="FlashROM-dump"><br><img width="1879" height="678" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/flashrom.png" alt="flashrom"><br>읽어온 펌웨어의 안정성을 확인하기 위해 총 두 번 바이너리를 추출한 후 각 바이너리의 MD5 해시값을 비교했습니다.</p>
-<p><img width="445" height="71" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/md5sum.png" alt="md5sum"><br><img width="819" height="364" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/binwalk-firmware.png" alt="binwalk firmware"></p>
+<figure><img width="2391" height="1748" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.jpeg" alt="리본 케이블로 SOP-8 클립과 연결된 CH341A SPI 프로그래머"><figcaption><span class="fig-num">Figure 5.</span> CH341A 프로그래머와 SOP-8 클립</figcaption></figure>
+<figure><img width="1879" height="678" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/flashrom.png" alt="ch341a_spi로 Boya&#x2F;BoHong B.25D16A를 인식한 flashrom 출력"><figcaption><span class="fig-num">Figure 6.</span> flashrom이 인식한 Boya&#x2F;BoHong B.25D16A, 2048 kB</figcaption></figure>
+<p>읽어온 펌웨어의 안정성을 확인하기 위해 총 두 번 바이너리를 추출한 후 각 바이너리의 MD5 해시값을 비교했습니다.</p>
+<figure><img width="445" height="71" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/md5sum.png" alt="rom.bin과 rom2.bin의 해시가 동일한 md5sum 출력"><figcaption><span class="fig-num">Figure 7.</span> 두 번 읽어도 같은 MD5</figcaption></figure>
+<figure><img width="819" height="364" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/binwalk-firmware.png" alt="CRC32 테이블, 0x8D60의 gzip, 0x22818의 LZMA를 나열한 binwalk 출력"><figcaption><span class="fig-num">Figure 8.</span> gzip은 0x8D60, LZMA는 0x22818</figcaption></figure>
 <p>바이너리의 MD5 해시는 모두 동일했습니다. 펌웨어에는 gzip으로 압축된 데이터와 LZMA로 압축된 리소스가 포함되어 있습니다. LZMA로 압축된 리소스는 부팅 시퀀스에서 RAM으로 압축 해제됩니다. 펌웨어 정적 분석을 수행하기 전에 올바른 메모리 주소에 매핑된 세그먼트를 생성하기 위해서 SoC의 메모리 맵을 식별해야 합니다.</p>
 <p>그래서 EMI (Electromagnetic Interference) 차폐막을 제거하고 SoC 모델을 확인했습니다. 해당 SoC는 MIPS 아키텍처 기반의 RTL8197F 제품군에 속합니다.</p>
-<p><img width="2189" height="2132" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="EMI-Shield open"></p>
-<p><img width="2540" height="2639" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="SoC"></p>
-<h2 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h2><p><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="boot-sequence-diagram"></p>
-<h2 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h2><p><img width="809" height="197" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="ROM memory map"><br><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
-<p><img width="447" height="70" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-vector-table.png" alt="Stage 1 BL vector table"><br><img width="749" height="739" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-reset_entry.png" alt="Stage 1 BL reset_entry"></p>
+<figure><img width="2189" height="2132" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="칼날로 보드에서 EMI 차폐막을 들어내는 모습"><figcaption><span class="fig-num">Figure 9.</span> EMI 차폐막 제거</figcaption></figure>
+<figure><img width="2540" height="2639" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="각인 부분이 강조된 SoC 패키지 근접 촬영"><figcaption><span class="fig-num">Figure 10.</span> SoC는 MIPS 기반 RTL8197F 제품군</figcaption></figure>
+<h2 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h2><figure><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="Boot ROM XIP부터 Stage 1.5, Stage 2, 커널 압축 해제기, eCos 스케줄러까지의 부팅 시퀀스"><figcaption><span class="fig-num">Figure 11.</span> Boot ROM → Stage 1.5 → Stage 2 → 커널 압축 해제기 → eCos 커널</figcaption></figure>
+<h2 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h2><figure><img width="809" height="197" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="SPI NOR 플래시 행이 강조된 RTL8197F 메모리 맵 표"><figcaption><span class="fig-num">Figure 12.</span> SPI NOR 플래시는 0xB000_0000에 128 MB로 매핑</figcaption></figure>
+<p><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
+<figure><img width="447" height="70" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-vector-table.png" alt="loc_B000000C로 점프하는 reset_entry를 보여주는 ROM:B0000000 디스어셈블리"><figcaption><span class="fig-num">Figure 13.</span> 0xB0000000 리셋 벡터</figcaption></figure>
+<figure><img width="749" height="739" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-reset_entry.png" alt="UART 부팅 로그 출력, DDR 초기화, DRAM 복사, 캐시 무효화가 담긴 reset_entry 디컴파일 결과"><figcaption><span class="fig-num">Figure 14.</span> reset_entry에서 DDR 초기화, DRAM 0x80100000 복사, 캐시 무효화</figcaption></figure>
 <p>Stage 1 Boot ROM 코드는 부팅 로그를 출력하고, D-Cache (데이터 캐시) 와 I-Cache (명령어 캐시) 를 무효화하고, Stage 1.5 부트로더 (0xB0007000) 를 DRAM (0x80100000) 에 로드한 후 해당 위치로 점프합니다.<br>그래서 다음과 같이 새로운 DRAM 세그먼트를 생성했습니다:</p>
-<p><img width="751" height="595" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1.5-BL-segment.png" alt="Stage 1.5 BL segment"></p>
+<figure><img width="751" height="595" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1.5-BL-segment.png" alt="0x80100000-0x8010B4C4 DRAM 세그먼트를 만드는 IDA 세그먼트 속성 대화상자"><figcaption><span class="fig-num">Figure 15.</span> DRAM 세그먼트 0x80100000-0x8010B4C4</figcaption></figure>
 <h2 id="Boot-Stage-1-5"><a href="#Boot-Stage-1-5" class="headerlink" title="Boot Stage 1.5"></a>Boot Stage 1.5</h2><pre><code class="hljs c">DRAM:<span class="hljs-number">80100000</span>     <span class="hljs-meta"># int dram_entry()</span>
 DRAM:<span class="hljs-number">80100000</span>    dram_entry:
 DRAM:<span class="hljs-number">80100000</span>                    li      $t0, unk_8010B4C0
@@ -353,7 +360,7 @@ DRAM:<span class="hljs-number">8000047</span>C                    nop
 <li>cr6c: 루트 파일 시스템 이미지</li>
 </ul>
 <p>이 경우 펌웨어에는 “cs6c” 매직 바이트가 포함되어 있는데, 이는 루트 파일 시스템이 아닌 LZMA로 압축된 이미지임을 나타냅니다.</p>
-<p><img width="575" height="57" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/xxd-firmware-magic-bytes.png" alt="xxd firmware magic bytes"></p>
+<figure><img width="575" height="57" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/xxd-firmware-magic-bytes.png" alt="오프셋 0x20000에서 63 73 36 63(cs6c)을 보여주는 rom.bin의 xxd 출력"><figcaption><span class="fig-num">Figure 16.</span> 0x20000의 매직 바이트 cs6c</figcaption></figure>
 <p>또한, 매직 바이트가 “cr6c”인지 여부에 따라 루트 파일 시스템 체크섬 값을 검증합니다.</p>
 <pre><code class="hljs c"><span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">load_firmware_n_jump</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, _DWORD *a2)</span>
 &#123;
