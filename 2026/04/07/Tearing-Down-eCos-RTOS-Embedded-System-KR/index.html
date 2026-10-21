@@ -9,19 +9,29 @@
   <title>Tearing Down eCos RTOS Embedded System | s14ke</title>
   <meta name="description" content="플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.">
   <link rel="canonical" href="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
+  
+  <link rel="alternate" hreflang="ko" href="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
+  <link rel="alternate" hreflang="en" href="https://s14ke.kr/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/">
+  <link rel="alternate" hreflang="x-default" href="https://s14ke.kr/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/">
+  
+  <link rel="alternate" type="application/atom+xml" title="s14ke" href="/atom.xml">
   <meta property="og:type" content="article">
   <meta property="og:title" content="Tearing Down eCos RTOS Embedded System | s14ke">
   <meta property="og:description" content="플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.">
   <meta property="og:url" content="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
   <meta property="og:site_name" content="s14ke">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:image" content="https://s14ke.kr/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://s14ke.kr/images/og-default.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css">
   <link rel="stylesheet" href="/css/main.css">
   <script>(function(d){d.classList.add('js');if(!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('anim');setTimeout(function(){d.classList.remove('anim');},6000);}})(document.documentElement);</script>
-<meta name="generator" content="Hexo 8.1.1"><link rel="alternate" href="/atom.xml" title="s14ke" type="application/atom+xml">
-</head>
+<meta name="generator" content="Hexo 8.1.1"></head>
 
 <body data-page="post">
   <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
@@ -48,12 +58,6 @@
 <main class="main-container">
   <div class="post-layout">
 
-    
-    <aside class="toc-sidebar" id="toc-sidebar">
-      <div class="toc-label">Contents</div>
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#TL-DR"><span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Flash-Dump"><span class="toc-text">Flash Dump</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI"><span class="toc-text">SPI</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Clock-Signal"><span class="toc-text">Clock Signal</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI-Communication-Diagram"><span class="toc-text">SPI Communication Diagram</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Sequence-Overview"><span class="toc-text">Boot Sequence Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1"><span class="toc-text">Boot Stage 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1-5"><span class="toc-text">Boot Stage 1.5</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-2"><span class="toc-text">Boot Stage 2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Stage-2-Bootloader-Firmware-Integrity-Verification"><span class="toc-text">Stage 2 Bootloader: Firmware Integrity Verification</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kernel-Decompressor"><span class="toc-text">Kernel Decompressor</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-KSEG1-for-Kernel-Decompression-Output"><span class="toc-text">Why KSEG1 for Kernel Decompression Output?</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#eCos-Firmware"><span class="toc-text">eCos Firmware</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-Static-Constructors-Thread-Registration"><span class="toc-text">C++ Static Constructors: Thread Registration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><span class="toc-text">Scheduler Dispatch: Indirect Call to Application Thread</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Conclusion"><span class="toc-text">Conclusion</span></a></li></ol>
-    </aside>
-
     <article class="post-article">
       <a href="/" class="back-link" data-reveal="back"><span class="back-arrow">&larr;</span> Index</a>
 
@@ -65,7 +69,7 @@
           <span class="meta-item meta-tags"><a href="/tags/IoT/" class="meta-tag">IoT</a><a href="/tags/RTOS/" class="meta-tag">RTOS</a></span>
         
         <span class="meta-item">13 min read</span>
-        <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="meta-item meta-alt">Read in English</a>
+        <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="meta-item meta-alt" hreflang="en">Read in English</a>
       </div>
 
       
@@ -77,10 +81,10 @@
 
       <div class="post-content" id="post-content">
         <h2 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h2><p>eCos 기반 임베디드 시스템을 플래시 덤프부터 부팅 시퀀스까지의 분석 과정을 설명합니다.</p>
-<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="PCB"><br>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="FlashROM"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="FlashROM-off"></p>
+<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><p><img width="2712" height="2131" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="PCB"><br>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
+<p><img width="2673" height="2673" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="FlashROM"><br><img width="2930" height="2930" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="FlashROM-off"></p>
 <p>NOR 플래시는 <a target="_blank" rel="noopener" href="https://www.e-interlink.com.tw/userUpload/files/BH25D16A_v1_0.pdf">BoHong BH25D16A</a> 칩이었으며 핀 구성도는 아래와 같습니다:</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="FlashROM-pinmap"></p>
+<p><img width="718" height="578" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="FlashROM-pinmap"></p>
 <ul>
 <li>1: &#x2F;CS (칩 선택)</li>
 <li>2: DO (직렬 데이터 출력)</li>
@@ -145,17 +149,17 @@ MISO ────[MSB]───────────────────�
          ↑ 전이중</code></pre>
 
 <p>BH25D16A의 최대 클럭 주파수는 일반 읽기 시 55MHz, 고속&#x2F;듀얼 읽기 시 108MHz입니다. 저는 CH341A 프로그래머를 사용하여 NOR 플래시와 SPI 통신했습니다. <a target="_blank" rel="noopener" href="https://flashrom.org/">flashrom</a>의 spispeed는 2MHz로 고정이며, 이는 NOR 플래시의 최대 클럭 주파수 범위 내에 있으므로 별도의 속도 조정 없이 플래시 메모리를 읽을 수 있었습니다.</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.jpeg" alt="FlashROM-dump"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/flashrom.png" alt="flashrom"><br>읽어온 펌웨어의 안정성을 확인하기 위해 총 두 번 바이너리를 추출한 후 각 바이너리의 MD5 해시값을 비교했습니다.</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/md5sum.png" alt="md5sum"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/binwalk-firmware.png" alt="binwalk firmware"></p>
+<p><img width="2391" height="1748" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.jpeg" alt="FlashROM-dump"><br><img width="1879" height="678" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/flashrom.png" alt="flashrom"><br>읽어온 펌웨어의 안정성을 확인하기 위해 총 두 번 바이너리를 추출한 후 각 바이너리의 MD5 해시값을 비교했습니다.</p>
+<p><img width="445" height="71" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/md5sum.png" alt="md5sum"><br><img width="819" height="364" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/binwalk-firmware.png" alt="binwalk firmware"></p>
 <p>바이너리의 MD5 해시는 모두 동일했습니다. 펌웨어에는 gzip으로 압축된 데이터와 LZMA로 압축된 리소스가 포함되어 있습니다. LZMA로 압축된 리소스는 부팅 시퀀스에서 RAM으로 압축 해제됩니다. 펌웨어 정적 분석을 수행하기 전에 올바른 메모리 주소에 매핑된 세그먼트를 생성하기 위해서 SoC의 메모리 맵을 식별해야 합니다.</p>
 <p>그래서 EMI (Electromagnetic Interference) 차폐막을 제거하고 SoC 모델을 확인했습니다. 해당 SoC는 MIPS 아키텍처 기반의 RTL8197F 제품군에 속합니다.</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="EMI-Shield open"></p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="SoC"></p>
+<p><img width="2189" height="2132" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="EMI-Shield open"></p>
+<p><img width="2540" height="2639" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="SoC"></p>
 <h2 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h2><p><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="boot-sequence-diagram"></p>
-<h2 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h2><p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="ROM memory map"><br><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-vector-table.png" alt="Stage 1 BL vector table"><br><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-reset_entry.png" alt="Stage 1 BL reset_entry"></p>
+<h2 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h2><p><img width="809" height="197" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="ROM memory map"><br><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
+<p><img width="447" height="70" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-vector-table.png" alt="Stage 1 BL vector table"><br><img width="749" height="739" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1-BL-reset_entry.png" alt="Stage 1 BL reset_entry"></p>
 <p>Stage 1 Boot ROM 코드는 부팅 로그를 출력하고, D-Cache (데이터 캐시) 와 I-Cache (명령어 캐시) 를 무효화하고, Stage 1.5 부트로더 (0xB0007000) 를 DRAM (0x80100000) 에 로드한 후 해당 위치로 점프합니다.<br>그래서 다음과 같이 새로운 DRAM 세그먼트를 생성했습니다:</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1.5-BL-segment.png" alt="Stage 1.5 BL segment"></p>
+<p><img width="751" height="595" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/Stage1.5-BL-segment.png" alt="Stage 1.5 BL segment"></p>
 <h2 id="Boot-Stage-1-5"><a href="#Boot-Stage-1-5" class="headerlink" title="Boot Stage 1.5"></a>Boot Stage 1.5</h2><pre><code class="hljs c">DRAM:<span class="hljs-number">80100000</span>     <span class="hljs-meta"># int dram_entry()</span>
 DRAM:<span class="hljs-number">80100000</span>    dram_entry:
 DRAM:<span class="hljs-number">80100000</span>                    li      $t0, unk_8010B4C0
@@ -349,7 +353,7 @@ DRAM:<span class="hljs-number">8000047</span>C                    nop
 <li>cr6c: 루트 파일 시스템 이미지</li>
 </ul>
 <p>이 경우 펌웨어에는 “cs6c” 매직 바이트가 포함되어 있는데, 이는 루트 파일 시스템이 아닌 LZMA로 압축된 이미지임을 나타냅니다.</p>
-<p><img loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/xxd-firmware-magic-bytes.png" alt="xxd firmware magic bytes"></p>
+<p><img width="575" height="57" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/xxd-firmware-magic-bytes.png" alt="xxd firmware magic bytes"></p>
 <p>또한, 매직 바이트가 “cr6c”인지 여부에 따라 루트 파일 시스템 체크섬 값을 검증합니다.</p>
 <pre><code class="hljs c"><span class="hljs-type">int</span> __fastcall <span class="hljs-title function_">load_firmware_n_jump</span><span class="hljs-params">(<span class="hljs-type">int</span> a1, _DWORD *a2)</span>
 &#123;
@@ -620,6 +624,11 @@ DRAM:<span class="hljs-number">8021</span>DA84  lw      $a0, <span class="hljs-n
         
       </div>
     </article>
+
+    <aside class="toc-sidebar" id="toc-sidebar">
+      <div class="toc-label">Contents</div>
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#TL-DR"><span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Flash-Dump"><span class="toc-text">Flash Dump</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI"><span class="toc-text">SPI</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Clock-Signal"><span class="toc-text">Clock Signal</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI-Communication-Diagram"><span class="toc-text">SPI Communication Diagram</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Sequence-Overview"><span class="toc-text">Boot Sequence Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1"><span class="toc-text">Boot Stage 1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-1-5"><span class="toc-text">Boot Stage 1.5</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Boot-Stage-2"><span class="toc-text">Boot Stage 2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Stage-2-Bootloader-Firmware-Integrity-Verification"><span class="toc-text">Stage 2 Bootloader: Firmware Integrity Verification</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kernel-Decompressor"><span class="toc-text">Kernel Decompressor</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-KSEG1-for-Kernel-Decompression-Output"><span class="toc-text">Why KSEG1 for Kernel Decompression Output?</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#eCos-Firmware"><span class="toc-text">eCos Firmware</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-Static-Constructors-Thread-Registration"><span class="toc-text">C++ Static Constructors: Thread Registration</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Scheduler-Dispatch-Indirect-Call-to-Application-Thread"><span class="toc-text">Scheduler Dispatch: Indirect Call to Application Thread</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Conclusion"><span class="toc-text">Conclusion</span></a></li></ol>
+    </aside>
   </div>
 </main>
 

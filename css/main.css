@@ -138,13 +138,12 @@ a.entry-alt:hover { color: var(--accent-deep); text-decoration: underline; text-
 .tag-row:hover .tag-name { color: var(--accent); }
 .tag-latest { color: var(--dim); }
 .tag-count { color: var(--muted); text-align: right; }
-.about-content { max-width: 680px; padding: 36px 0 96px; }
 
-/* article */
-.post-layout { display: flex; align-items: flex-start; gap: 56px; }
-.toc-sidebar { display: none; flex: 0 0 212px; position: sticky; top: 100px; max-height: calc(100vh - 130px); overflow-y: auto; padding-top: 64px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+/* article — the TOC sits in the trailing column so the article keeps the
+   container's left edge, the same line the masthead, lists and footer use */
+.post-layout { display: flex; align-items: flex-start; gap: 48px; }
+.toc-sidebar { display: none; flex: 0 0 208px; position: sticky; top: 100px; max-height: calc(100vh - 130px); overflow-y: auto; padding-top: 64px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 @media (min-width: 1100px) { .toc-sidebar { display: block; } }
-@media (max-width: 1099px) { .post-article { margin-inline: auto; } }
 
 /* collapsed contents for the widths where the sidebar is gone */
 .toc-mobile { margin-bottom: 36px; border: 1px solid var(--line); background: var(--panel); }
@@ -167,7 +166,7 @@ a.entry-alt:hover { color: var(--accent-deep); text-decoration: underline; text-
 .toc-sidebar .toc-link:hover { color: var(--text); }
 .toc-sidebar .toc-link.active { color: var(--accent); }
 .toc-sidebar .toc-link.active::before { width: 9px; background: var(--accent); }
-.post-article { flex: 1 1 auto; min-width: 0; max-width: 720px; padding: 56px 0 96px; }
+.post-article { flex: 1 1 720px; min-width: 0; max-width: 720px; padding: 56px 0 96px; }
 .post-article .back-link { margin-bottom: 32px; }
 .post-heading { margin-bottom: 22px; font-size: clamp(36px, 4.6vw, 54px); line-height: 1.12; }
 .post-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 44px; padding-bottom: 20px; border-bottom: 1px solid var(--line); color: var(--dim); }
@@ -304,7 +303,7 @@ html[data-theme="dark"] .nf-layer { mix-blend-mode: screen; }
   .post-content pre { padding: 13px; font-size: 12.5px; }
   .post-nav { flex-direction: column; gap: 18px; }
   .post-nav-next { text-align: left; }
-  .about-content, .tag-list { padding-bottom: 56px; }
+  .tag-list { padding-bottom: 56px; }
 }
 @media (max-width: 400px) {
   .header-inner { gap: 12px; }

@@ -150,7 +150,7 @@
     if (entries.length) { tl.add(entries, { opacity: [0, 1], x: [-12, 0], duration: 560, delay: stagger(80) }, t); t += 120; }
 
     /* 4. article body blocks: first screen staggers in, rest reveal on scroll */
-    if (page === 'post' || page === 'about' || page === 'page') {
+    if (page === 'post' || page === 'page') {
       var blocks = $all('#post-content > *');
       var firstScreen = [];
       blocks.forEach(function (el) { (inViewport(el) ? firstScreen : lazy).push(el); });

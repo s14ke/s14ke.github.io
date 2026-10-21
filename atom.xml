@@ -6,7 +6,7 @@
   <link href="https://s14ke.kr/atom.xml" rel="self"/>
   
   <link href="https://s14ke.kr/"/>
-  <updated>2026-08-30T12:09:29.549Z</updated>
+  <updated>2026-10-21T12:06:40.552Z</updated>
   <id>https://s14ke.kr/</id>
   
   <author>
@@ -21,7 +21,7 @@
     <link href="https://s14ke.kr/2026/06/16/CVE-2026-6250-KR/"/>
     <id>https://s14ke.kr/2026/06/16/CVE-2026-6250-KR/</id>
     <published>2026-06-16T13:04:48.000Z</published>
-    <updated>2026-08-30T12:09:29.549Z</updated>
+    <updated>2026-10-21T12:06:40.552Z</updated>
     
     
     <summary type="html">Tapo C110 v2 ONVIF 서비스의 인증된 포맷 스트링 취약점 CVE-2026-6250 기술 분석.</summary>
@@ -40,7 +40,7 @@
     <link href="https://s14ke.kr/2026/06/14/CVE-2026-6250/"/>
     <id>https://s14ke.kr/2026/06/14/CVE-2026-6250/</id>
     <published>2026-06-14T08:19:42.000Z</published>
-    <updated>2026-08-30T12:09:29.548Z</updated>
+    <updated>2026-10-21T12:06:40.552Z</updated>
     
     
     <summary type="html">Technical analysis of CVE-2026-6250, an authenticated format string vulnerability in the Tapo C110 v2 ONVIF service.</summary>
@@ -59,7 +59,7 @@
     <link href="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/"/>
     <id>https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/</id>
     <published>2026-04-06T23:35:37.000Z</published>
-    <updated>2026-08-30T14:42:55.256Z</updated>
+    <updated>2026-10-21T12:06:40.565Z</updated>
     
     
     <summary type="html">플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.</summary>
@@ -78,7 +78,7 @@
     <link href="https://s14ke.kr/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/"/>
     <id>https://s14ke.kr/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/</id>
     <published>2026-03-30T11:05:01.000Z</published>
-    <updated>2026-08-30T12:08:08.505Z</updated>
+    <updated>2026-10-21T12:06:40.565Z</updated>
     
     
     <summary type="html">A hands-on teardown of an eCos-based embedded system, from flash dumping and bootloaders to RTOS internals.</summary>
