@@ -397,7 +397,7 @@
       img.parentNode.insertBefore(button, img);
       button.appendChild(img);
       button.addEventListener('click', function () {
-        openLightbox(A, motion, img.currentSrc || img.src, img.alt || '', button);
+        openLightbox(A, motion, img.src, img.alt || '', button);
       });
     });
   }
