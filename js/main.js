@@ -14,6 +14,7 @@
     if (!motion) html.classList.remove('anim');
 
     initNavActive();
+    initMobileNav();
     initCodeBlocks(A, motion);
     initTables();
     initLightbox(A, motion);
@@ -251,8 +252,34 @@
       if (!href) return;
       var isHome = href === '/' && (path === '/' || path === '/index.html');
       var isOther = href !== '/' && path.indexOf(href) === 0;
-      if (isHome || isOther) link.classList.add('active');
+      if (isHome || isOther) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
+      }
     });
+  }
+
+  function initMobileNav() {
+    var button = document.getElementById('menu-toggle');
+    var nav = document.getElementById('site-nav');
+    if (!button || !nav) return;
+    function setOpen(open) {
+      nav.classList.toggle('is-open', open);
+      button.setAttribute('aria-expanded', String(open));
+    }
+    button.addEventListener('click', function () {
+      setOpen(button.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (event) {
+      if (!button.contains(event.target) && !nav.contains(event.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && button.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        button.focus();
+      }
+    });
+    window.addEventListener('resize', function () { if (window.innerWidth > 720) setOpen(false); });
   }
 
   /* ------------------------------------------------------------------ code blocks */
@@ -336,6 +363,25 @@
       wrapper.className = 'table-wrapper';
       table.parentNode.insertBefore(wrapper, table);
       wrapper.appendChild(table);
+      var hint = document.createElement('p');
+      hint.className = 'table-scroll-hint';
+      hint.textContent = 'Scroll to see full table \u2192';
+      hint.hidden = true;
+      wrapper.parentNode.insertBefore(hint, wrapper);
+      function updateOverflow() {
+        var overflow = wrapper.scrollWidth > wrapper.clientWidth + 1;
+        hint.hidden = !overflow;
+        wrapper.tabIndex = overflow ? 0 : -1;
+        if (overflow) {
+          wrapper.setAttribute('role', 'region');
+          wrapper.setAttribute('aria-label', 'Scrollable table');
+        } else {
+          wrapper.removeAttribute('role');
+          wrapper.removeAttribute('aria-label');
+        }
+      }
+      requestAnimationFrame(updateOverflow);
+      window.addEventListener('resize', updateOverflow);
     });
   }
 
@@ -343,21 +389,39 @@
 
   function initLightbox(A, motion) {
     $all('.post-content img').forEach(function (img) {
-      var anchor = img.closest('a');
-      if (anchor) anchor.addEventListener('click', function (e) { e.preventDefault(); });
-      img.style.cursor = 'zoom-in';
-      img.addEventListener('click', function () { openLightbox(A, motion, img.currentSrc || img.src); });
+      if (img.closest('a')) return;
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'image-zoom';
+      button.setAttribute('aria-label', 'Enlarge image: ' + (img.alt || 'article image'));
+      img.parentNode.insertBefore(button, img);
+      button.appendChild(img);
+      button.addEventListener('click', function () {
+        openLightbox(A, motion, img.currentSrc || img.src, img.alt || '', button);
+      });
     });
   }
 
-  function openLightbox(A, motion, src) {
+  function openLightbox(A, motion, src, alt, trigger) {
     var overlay = document.createElement('div');
     overlay.className = 'lb-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Expanded image');
     var imgEl = document.createElement('img');
     imgEl.className = 'lb-img';
     imgEl.src = src;
+    imgEl.alt = alt;
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'lb-close';
+    closeBtn.type = 'button';
+    closeBtn.textContent = 'Close';
     overlay.appendChild(imgEl);
+    overlay.appendChild(closeBtn);
     document.body.appendChild(overlay);
+    var previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeBtn.focus();
 
     var BG = 'rgba(6, 7, 8, 0.94)';
     if (motion) {
@@ -418,8 +482,15 @@
       tx = c.x; ty = c.y; applyTransform(false);
     }, { passive: false });
 
-    function remove() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+    var closing = false;
+    function remove() {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      document.body.style.overflow = previousOverflow;
+      if (trigger && trigger.isConnected) trigger.focus();
+    }
     function close() {
+      if (closing) return;
+      closing = true;
       document.removeEventListener('keydown', onKey);
       if (motion) {
         A.animate(overlay, { opacity: 0, duration: 180, ease: 'outQuad', onComplete: remove });
@@ -427,8 +498,12 @@
         remove();
       }
     }
-    overlay.addEventListener('click', function (e) { if (e.target !== imgEl) close(); });
-    function onKey(e) { if (e.key === 'Escape') close(); }
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    function onKey(e) {
+      if (e.key === 'Escape') close();
+      if (e.key === 'Tab') { e.preventDefault(); closeBtn.focus(); }
+    }
     document.addEventListener('keydown', onKey);
   }
 

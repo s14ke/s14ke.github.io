@@ -8,6 +8,7 @@
   <script>(function(){var theme;try{theme=localStorage.getItem('s14ke-theme');}catch(e){}if(theme!=='dark'&&theme!=='light')theme=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',theme);if(theme==='dark')document.querySelector('meta[name="theme-color"]').setAttribute('content','#0b0b0d');})();</script>
   <title>Tearing Down eCos RTOS Embedded System | s14ke</title>
   <meta name="description" content="플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.">
+
   <link rel="canonical" href="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
   
   <link rel="alternate" hreflang="ko" href="https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/">
@@ -31,7 +32,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css">
   <link rel="stylesheet" href="/css/main.css">
   <script>(function(d){d.classList.add('js');if(!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('anim');setTimeout(function(){d.classList.remove('anim');},6000);}})(document.documentElement);</script>
-<meta name="generator" content="Hexo 8.1.1"></head>
+<meta name="generator" content="Hexo 8.1.2"></head>
 
 <body data-page="post">
   <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
@@ -39,7 +40,8 @@
   <div class="header-inner">
     <a href="/" class="logo" aria-label="s14ke home">s14ke</a>
     <div class="header-actions">
-      <nav class="site-nav" aria-label="Primary">
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button>
+      <nav class="site-nav" id="site-nav" aria-label="Primary">
         <a href="/" class="nav-link">Home</a>
         <a href="/archives/" class="nav-link">Archives</a>
         <a href="/tags/" class="nav-link">Tags</a>
@@ -62,6 +64,7 @@
       <a href="/" class="back-link" data-reveal="back"><span class="back-arrow">&larr;</span> Index</a>
 
       <h1 class="post-heading" data-split="title">Tearing Down eCos RTOS Embedded System</h1>
+      <p class="post-deck">플래시 덤프와 부트로더부터 RTOS 내부 구조까지 살펴보는 eCos 기반 임베디드 시스템 분석.</p>
 
       <div class="post-meta" data-reveal="meta">
         <time class="meta-item" datetime="2026-04-07">2026-04-07</time>
@@ -81,10 +84,10 @@
 
       <div class="post-content" id="post-content">
         <h2 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h2><p>eCos 기반 임베디드 시스템을 플래시 덤프부터 부팅 시퀀스까지의 분석 과정을 설명합니다.</p>
-<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><figure><img width="2712" height="2131" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.jpeg" alt="UART 헤더, SPI NOR 플래시, SoC, WLAN 칩이 표시된 라우터 메인보드"><figcaption><span class="fig-num">Figure 1.</span> 타겟 메인보드의 UART 헤더, SPI NOR 플래시, SoC, WLAN 칩</figcaption></figure>
+<h2 id="Flash-Dump"><a href="#Flash-Dump" class="headerlink" title="Flash Dump"></a>Flash Dump</h2><figure><img width="1800" height="1415" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/PCB.webp" alt="UART 헤더, SPI NOR 플래시, SoC, WLAN 칩이 표시된 라우터 메인보드"><figcaption><span class="fig-num">Figure 1.</span> 타겟 메인보드의 UART 헤더, SPI NOR 플래시, SoC, WLAN 칩</figcaption></figure>
 <p>eCos 기반 라우터 타겟에는 SoC (System-on-Chip), SPI SOP-8 NOR 플래시 칩, UART (Universal Asynchronous Receiver-Transmitter) 인터페이스 및 무선 LAN 칩이 탑재되어 있었습니다. 플래시 메모리 덤프를 위해 NOR 플래시 칩을 칩오프하기로 했습니다.</p>
-<figure><img width="2673" height="2673" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.jpeg" alt="보드에 실장된 SOP-8 NOR 플래시와 패키지 각인 표시"><figcaption><span class="fig-num">Figure 2.</span> UART 헤더 바로 옆 NOR 플래시, 각인은 H25S16 &#x2F; BG 25JD &#x2F; AP4K044</figcaption></figure>
-<figure><img width="2930" height="2930" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.jpeg" alt="핀셋으로 칩오프한 SOP-8 플래시를 패드에서 들어올리는 모습"><figcaption><span class="fig-num">Figure 3.</span> 패드에서 칩오프한 NOR 플래시</figcaption></figure>
+<figure><img width="1800" height="1800" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM.webp" alt="보드에 실장된 SOP-8 NOR 플래시와 패키지 각인 표시"><figcaption><span class="fig-num">Figure 2.</span> UART 헤더 바로 옆 NOR 플래시, 각인은 H25S16 &#x2F; BG 25JD &#x2F; AP4K044</figcaption></figure>
+<figure><img width="1800" height="1800" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-off.webp" alt="핀셋으로 칩오프한 SOP-8 플래시를 패드에서 들어올리는 모습"><figcaption><span class="fig-num">Figure 3.</span> 패드에서 칩오프한 NOR 플래시</figcaption></figure>
 <p>NOR 플래시는 <a target="_blank" rel="noopener" href="https://www.e-interlink.com.tw/userUpload/files/BH25D16A_v1_0.pdf">BoHong BH25D16A</a> 칩이었으며 핀 구성도는 아래와 같습니다:</p>
 <figure><img width="718" height="578" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-pinmap.png" alt="BH25D16A SOP-8 상면 핀 구성도: &#x2F;CS, SO, &#x2F;WP, VSS, SI, SCLK, NC, VCC"><figcaption><span class="fig-num">Figure 4.</span> &#x2F;HOLD 핀이 빠진 BH25D16A 핀 구성도(상면)</figcaption></figure>
 <ul>
@@ -151,15 +154,15 @@ MISO ────[MSB]───────────────────�
          ↑ 전이중</code></pre>
 
 <p>BH25D16A의 최대 클럭 주파수는 일반 읽기 시 55MHz, 고속&#x2F;듀얼 읽기 시 108MHz입니다. 저는 CH341A 프로그래머를 사용하여 NOR 플래시와 SPI 통신했습니다. <a target="_blank" rel="noopener" href="https://flashrom.org/">flashrom</a>의 spispeed는 2MHz로 고정이며, 이는 NOR 플래시의 최대 클럭 주파수 범위 내에 있으므로 별도의 속도 조정 없이 플래시 메모리를 읽을 수 있었습니다.</p>
-<figure><img width="2391" height="1748" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.jpeg" alt="리본 케이블로 SOP-8 클립과 연결된 CH341A SPI 프로그래머"><figcaption><span class="fig-num">Figure 5.</span> CH341A 프로그래머와 SOP-8 클립</figcaption></figure>
+<figure><img width="1800" height="1316" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/FlashROM-dump.webp" alt="리본 케이블로 SOP-8 클립과 연결된 CH341A SPI 프로그래머"><figcaption><span class="fig-num">Figure 5.</span> CH341A 프로그래머와 SOP-8 클립</figcaption></figure>
 <figure><img width="1879" height="678" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/flashrom.png" alt="ch341a_spi로 Boya&#x2F;BoHong B.25D16A를 인식한 flashrom 출력"><figcaption><span class="fig-num">Figure 6.</span> flashrom이 인식한 Boya&#x2F;BoHong B.25D16A, 2048 kB</figcaption></figure>
 <p>읽어온 펌웨어의 안정성을 확인하기 위해 총 두 번 바이너리를 추출한 후 각 바이너리의 MD5 해시값을 비교했습니다.</p>
 <figure><img width="445" height="71" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/md5sum.png" alt="rom.bin과 rom2.bin의 해시가 동일한 md5sum 출력"><figcaption><span class="fig-num">Figure 7.</span> 두 번 읽어도 같은 MD5</figcaption></figure>
 <figure><img width="819" height="364" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/binwalk-firmware.png" alt="CRC32 테이블, 0x8D60의 gzip, 0x22818의 LZMA를 나열한 binwalk 출력"><figcaption><span class="fig-num">Figure 8.</span> gzip은 0x8D60, LZMA는 0x22818</figcaption></figure>
 <p>바이너리의 MD5 해시는 모두 동일했습니다. 펌웨어에는 gzip으로 압축된 데이터와 LZMA로 압축된 리소스가 포함되어 있습니다. LZMA로 압축된 리소스는 부팅 시퀀스에서 RAM으로 압축 해제됩니다. 펌웨어 정적 분석을 수행하기 전에 올바른 메모리 주소에 매핑된 세그먼트를 생성하기 위해서 SoC의 메모리 맵을 식별해야 합니다.</p>
 <p>그래서 EMI (Electromagnetic Interference) 차폐막을 제거하고 SoC 모델을 확인했습니다. 해당 SoC는 MIPS 아키텍처 기반의 RTL8197F 제품군에 속합니다.</p>
-<figure><img width="2189" height="2132" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.jpeg" alt="칼날로 보드에서 EMI 차폐막을 들어내는 모습"><figcaption><span class="fig-num">Figure 9.</span> EMI 차폐막 제거</figcaption></figure>
-<figure><img width="2540" height="2639" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.jpeg" alt="각인 부분이 강조된 SoC 패키지 근접 촬영"><figcaption><span class="fig-num">Figure 10.</span> SoC는 MIPS 기반 RTL8197F 제품군</figcaption></figure>
+<figure><img width="1800" height="1754" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/EMI-Shield-open.webp" alt="칼날로 보드에서 EMI 차폐막을 들어내는 모습"><figcaption><span class="fig-num">Figure 9.</span> EMI 차폐막 제거</figcaption></figure>
+<figure><img width="1800" height="1871" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/SoC.webp" alt="각인 부분이 강조된 SoC 패키지 근접 촬영"><figcaption><span class="fig-num">Figure 10.</span> SoC는 MIPS 기반 RTL8197F 제품군</figcaption></figure>
 <h2 id="Boot-Sequence-Overview"><a href="#Boot-Sequence-Overview" class="headerlink" title="Boot Sequence Overview"></a>Boot Sequence Overview</h2><figure><img loading="lazy" decoding="async" src="/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/boot-sequence-diagram-kr.drawio.svg" alt="Boot ROM XIP부터 Stage 1.5, Stage 2, 커널 압축 해제기, eCos 스케줄러까지의 부팅 시퀀스"><figcaption><span class="fig-num">Figure 11.</span> Boot ROM → Stage 1.5 → Stage 2 → 커널 압축 해제기 → eCos 커널</figcaption></figure>
 <h2 id="Boot-Stage-1"><a href="#Boot-Stage-1" class="headerlink" title="Boot Stage 1"></a>Boot Stage 1</h2><figure><img width="809" height="197" loading="lazy" decoding="async" src="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/ROM-memorymap.png" alt="SPI NOR 플래시 행이 강조된 RTL8197F 메모리 맵 표"><figcaption><span class="fig-num">Figure 12.</span> SPI NOR 플래시는 0xB000_0000에 128 MB로 매핑</figcaption></figure>
 <p><a target="_blank" rel="noopener" href="https://datasheet.lcsc.com/datasheet/pdf/4a3f00e35d1237aed4f7175f86001796.pdf">RTL8197F 데이터시트</a>에 따르면, Stage 1 Boot ROM 코드는 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Execute_in_place">XIP</a>(eXecute In Place) 기술을 사용하여 가상 주소 0xB0000000에서 실행됩니다.</p>
@@ -618,13 +621,10 @@ DRAM:<span class="hljs-number">8021</span>DA84  lw      $a0, <span class="hljs-n
 
       <div class="post-nav">
         
-          <a href="/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/" class="post-nav-item post-nav-prev">
-            <div class="post-nav-dir">&larr; Older</div>
-            <div class="post-nav-title">Tearing Down eCos RTOS Embedded System</div>
-          </a>
+          <div class="post-nav-item"></div>
         
         
-          <a href="/2026/06/14/CVE-2026-6250/" class="post-nav-item post-nav-next">
+          <a href="/2026/06/16/CVE-2026-6250-KR/" class="post-nav-item post-nav-next">
             <div class="post-nav-dir">Newer &rarr;</div>
             <div class="post-nav-title">CVE-2026-6250</div>
           </a>

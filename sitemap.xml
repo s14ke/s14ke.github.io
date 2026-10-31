@@ -2,9 +2,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://s14ke.kr/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/</loc>
+    <loc>https://s14ke.kr/tags/index.html</loc>
     
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-31</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -13,7 +13,16 @@
   <url>
     <loc>https://s14ke.kr/2026/04/07/Tearing-Down-eCos-RTOS-Embedded-System-KR/</loc>
     
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-31</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://s14ke.kr/2026/03/30/Tearing-Down-eCos-RTOS-Embedded-System/</loc>
+    
+    <lastmod>2026-10-31</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -21,15 +30,6 @@
   
   <url>
     <loc>https://s14ke.kr/about/index.html</loc>
-    
-    <lastmod>2026-10-21</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://s14ke.kr/2026/06/14/CVE-2026-6250/</loc>
     
     <lastmod>2026-10-21</lastmod>
     
@@ -47,18 +47,9 @@
   </url>
   
   <url>
-    <loc>https://s14ke.kr/404.html</loc>
+    <loc>https://s14ke.kr/2026/06/14/CVE-2026-6250/</loc>
     
-    <lastmod>2026-06-29</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://s14ke.kr/tags/index.html</loc>
-    
-    <lastmod>2026-02-26</lastmod>
+    <lastmod>2026-10-21</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -67,7 +58,7 @@
 
   <url>
     <loc>https://s14ke.kr/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -75,21 +66,21 @@
   
   <url>
     <loc>https://s14ke.kr/tags/IoT/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://s14ke.kr/tags/0-Day/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://s14ke.kr/tags/RTOS/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>

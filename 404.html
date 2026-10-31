@@ -8,6 +8,9 @@
   <script>(function(){var theme;try{theme=localStorage.getItem('s14ke-theme');}catch(e){}if(theme!=='dark'&&theme!=='light')theme=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',theme);if(theme==='dark')document.querySelector('meta[name="theme-color"]').setAttribute('content','#0b0b0d');})();</script>
   <title>404 | s14ke</title>
   <meta name="description" content="Offensive security research on embedded systems, firmware, RTOS internals, and vulnerability discovery.">
+
+  <meta name="robots" content="noindex,follow">
+
   <link rel="canonical" href="https://s14ke.kr/404.html">
   
   <link rel="alternate" type="application/atom+xml" title="s14ke" href="/atom.xml">
@@ -27,7 +30,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css">
   <link rel="stylesheet" href="/css/main.css">
   <script>(function(d){d.classList.add('js');if(!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)){d.classList.add('anim');setTimeout(function(){d.classList.remove('anim');},6000);}})(document.documentElement);</script>
-<meta name="generator" content="Hexo 8.1.1"></head>
+<meta name="generator" content="Hexo 8.1.2"></head>
 
 <body data-page="notfound">
   <div class="progress-bar" id="progress-bar" aria-hidden="true"></div>
@@ -35,7 +38,8 @@
   <div class="header-inner">
     <a href="/" class="logo" aria-label="s14ke home">s14ke</a>
     <div class="header-actions">
-      <nav class="site-nav" aria-label="Primary">
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button>
+      <nav class="site-nav" id="site-nav" aria-label="Primary">
         <a href="/" class="nav-link">Home</a>
         <a href="/archives/" class="nav-link">Archives</a>
         <a href="/tags/" class="nav-link">Tags</a>
@@ -52,11 +56,11 @@
 
   <main class="not-found">
   <p class="nf-kicker" data-reveal="kicker">Not found</p>
-  <div class="nf-code" id="nf-code" aria-label="404">
+  <h1 class="nf-code" id="nf-code" aria-label="404">
     <span class="nf-layer nf-layer-a" aria-hidden="true">404</span>
     <span class="nf-layer nf-layer-b" aria-hidden="true">404</span>
     <span class="nf-main">404</span>
-  </div>
+  </h1>
   <p class="nf-msg" data-reveal="msg">There is nothing at <span class="nf-path" id="nf-path"></span>.</p>
   <a href="/" class="back-link" data-reveal="back"><span class="back-arrow">&larr;</span> Back to index</a>
 </main>
